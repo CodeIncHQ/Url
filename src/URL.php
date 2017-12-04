@@ -20,6 +20,7 @@
 // Project:  lib-gui
 //
 namespace CodeInc\URL;
+use CodeInc\ArrayAccess\ArrayAccessTrait;
 
 
 /**
@@ -28,7 +29,9 @@ namespace CodeInc\URL;
  * @package CodeInc\URL
  * @author Joan Fabrégat <joan@codeinc.fr>
  */
-class URL {
+class URL implements \ArrayAccess, \IteratorAggregate {
+	use ArrayAccessTrait;
+
 	/**
 	 * @var string
 	 */
@@ -257,37 +260,9 @@ class URL {
 	}
 
 	/**
-	 * @param int|string $offset
-	 * @param mixed $value
+	 * @return array
 	 */
-	public function offsetSet($offset, $value) {
-		if (is_null($offset)) {
-			$this->query[] = $value;
-		} else {
-			$this->query[$offset] = $value;
-		}
-	}
-
-	/**
-	 * @param int|string $offset
-	 * @return bool
-	 */
-	public function offsetExists($offset):bool {
-		return array_key_exists($offset, $this->query);
-	}
-
-	/**
-	 * @param int|string $offset
-	 */
-	public function offsetUnset($offset) {
-		unset($this->query[$offset]);
-	}
-
-	/**
-	 * @param int|string $offset
-	 * @return mixed|null
-	 */
-	public function offsetGet($offset) {
-		return $this->offsetExists($offset) ? $this->query[$offset] : null;
+	public function &getAccessibleArray():array {
+		return $this->query;
 	}
 }
