@@ -1,13 +1,13 @@
 {
   "name": "codeinchq/lib-url",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Code Inc.'s URL library",
   "homepage": "https://github.com/codeinchq/lib-url",
   "type": "package",
   "license": "proprietary",
   "require": {
     "php": ">=7.0",
-    "codeinchq/lib-arrayaccess": "dev-master"
+    "codeinchq/lib-arrayaccess": "^1.0"
   },
   "dist": {
     "url": "https://github.com/codeinchq/lib-url/archive/master.zip",
@@ -24,12 +24,6 @@
       "email": "joan@codeinc.co",
       "homepage": "https://www.codeinc.co",
       "role": "developer"
-    }
-  ],
-  "repositories": [
-    {
-      "type": "vcs",
-      "url": "https://github.com/codeinchq/lib-arrayaccess"
     }
   ]
 }
