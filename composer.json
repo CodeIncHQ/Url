@@ -1,6 +1,6 @@
 {
   "name": "codeinchq/lib-url",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Code Inc.'s URL library",
   "homepage": "https://github.com/codeinchq/lib-url",
   "type": "package",
@@ -8,10 +8,6 @@
   "require": {
     "php": ">=7.0",
     "codeinchq/lib-arrayaccess": "^1.0"
-  },
-  "dist": {
-    "url": "https://github.com/codeinchq/lib-url/archive/master.zip",
-    "type": "zip"
   },
   "autoload": {
     "psr-4": {
@@ -22,7 +18,7 @@
     {
       "name": "Joan Fabrégat",
       "email": "joan@codeinc.fr",
-      "homepage": "https://www.codeinc.co",
+      "homepage": "https://www.codeinc.fr",
       "role": "developer"
     }
   ]
