@@ -1,13 +1,13 @@
 {
   "name": "codeinchq/lib-url",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Code Inc.'s URL library",
   "homepage": "https://github.com/codeinchq/lib-url",
   "type": "package",
   "license": "proprietary",
   "require": {
     "php": ">=7.0",
-    "codeinchq/lib-arrayaccess": "dev-master"
+    "codeinchq/lib-arrayaccess": "^1.1"
   },
   "autoload": {
     "psr-4": {
