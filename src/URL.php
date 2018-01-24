@@ -35,50 +35,60 @@ class URL implements \ArrayAccess, \IteratorAggregate {
 	/**
 	 * @var string
 	 */
-	private $scheme;
+	protected $scheme;
 
 	/**
 	 * @var string
 	 */
-	private $host;
+	protected $host;
 
 	/**
 	 * @var int
 	 */
-	private $port;
+	protected $port;
 
 	/**
 	 * @var string
 	 */
-	private $user;
+	protected $user;
 
 	/**
 	 * @var string
 	 */
-	private $pass;
+	protected $pass;
 
 	/**
 	 * @var string
 	 */
-	private $path;
+	protected $path;
 
 	/**
 	 * @var array
 	 */
-	private $query = [];
+	protected $query = [];
 
 	/**
 	 * @var string
 	 */
-	private $fragment;
+	protected $fragment;
 
+	/**
+	 * URL constructor.
+	 *
+	 * @param string|null $URL
+	 */
 	public function __construct(string $URL = null) {
 		if ($URL) {
 			$this->setURL($URL);
 		}
 	}
 
-	public function setURL(string $URL) {
+	/**
+	 * Sets the URL.
+	 *
+	 * @param string $URL
+	 */
+	protected function setURL(string $URL) {
 		if ($parsedURL = parse_url($URL)) {
 			$this->scheme = $parsedURL['scheme'] ?? null;
 			$this->host = $parsedURL['host'] ?? null;
@@ -87,12 +97,8 @@ class URL implements \ArrayAccess, \IteratorAggregate {
 			$this->pass	= $parsedURL['pass'] ?? null;
 			$this->path = $parsedURL['path'] ?? null;
 			$this->fragment = $parsedURL['fragment'] ?? null;
-
 			if (isset($parsedURL['query']) && $parsedURL['query']) {
-				if (($this->query = parse_str($parsedURL['query'])) === null) {
-					$this->query = [];
-				}
-
+				parse_str($parsedURL['query'], $this->query);
 			}
 		}
 	}
