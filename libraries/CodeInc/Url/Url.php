@@ -19,19 +19,16 @@
 // Time:     14:08
 // Project:  lib-gui
 //
-namespace CodeInc\URL;
-use CodeInc\ArrayAccess\ArrayAccessTrait;
+namespace CodeInc\Url;
 
 
 /**
- * Class URL
+ * Class Url
  *
- * @package CodeInc\URL
+ * @package CodeInc\Url
  * @author Joan Fabrégat <joan@codeinc.fr>
  */
-class URL implements \ArrayAccess, \IteratorAggregate {
-	use ArrayAccessTrait;
-
+class Url {
 	/**
 	 * @var string
 	 */

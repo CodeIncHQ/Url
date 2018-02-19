@@ -19,15 +19,15 @@
 // Time:     18:28
 // Project:  lib-url
 //
-namespace CodeInc\URL;
+namespace CodeInc\Url;
 
 
 /**
- * Class URLException
+ * Class UrlException
  *
- * @package CodeInc\URL
+ * @package CodeInc\Url
  * @author Joan Fabrégat <joan@codeinc.fr>
  */
-class URLException extends \Exception {
+class UrlException extends \Exception {
 
 }
