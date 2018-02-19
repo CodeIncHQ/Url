@@ -12,10 +12,7 @@
     "phpunit/phpunit": "^7"
   },
   "autoload": {
-    "psr-0": {
-      "": "src",
-      "Tests": "tests"
-    }
+    "psr-0": {"": "src"}
   },
   "authors": [
     {
