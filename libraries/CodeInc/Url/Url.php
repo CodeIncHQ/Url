@@ -29,158 +29,363 @@ namespace CodeInc\Url;
  * @author Joan Fabrégat <joan@codeinc.fr>
  */
 class Url {
-	/**
-	 * @var string
-	 */
-	protected $scheme;
+	public const SCHEME_HTTP = "http";
+	public const SCHEME_HTTPS = "https";
+	public const DEFAULT_SCHEME = self::SCHEME_HTTP;
 
 	/**
-	 * @var string
+	 * @var string|null
 	 */
-	protected $host;
+	private $scheme;
 
 	/**
-	 * @var int
+	 * @var string|null
 	 */
-	protected $port;
+	private $host;
 
 	/**
-	 * @var string
+	 * @var int|null
 	 */
-	protected $user;
+	private $port;
 
 	/**
-	 * @var string
+	 * @var string|null
 	 */
-	protected $pass;
+	private $user;
 
 	/**
-	 * @var string
+	 * @var string|null
 	 */
-	protected $path;
+	private $password;
+
+	/**
+	 * @var string|null
+	 */
+	private $path;
 
 	/**
 	 * @var array
 	 */
-	protected $query = [];
+	private $query = [];
 
 	/**
-	 * @var string
+	 * @var string|null
 	 */
-	protected $fragment;
+	private $fragment;
 
 	/**
 	 * URL constructor.
 	 *
-	 * @param string|null $URL
+	 * @param string|null $url
 	 */
-	public function __construct(string $URL = null) {
-		if ($URL) {
-			$this->setURL($URL);
+	public function __construct(string $url = null) {
+		if ($url) {
+			$this->setUrl($url);
 		}
+	}
+
+	/**
+	 * @return Url
+	 */
+	public static function factoryFromCurrentUrl():Url {
+		$url = new Url();
+		$url->setCurrentScheme();
+		$url->setCurrentHost();
+		$url->setCurrentPath();
+		$url->setCurrentQueryString();
+		$url->setCurrentUser();
+		$url->setCurrentPassword();
+		return $url;
 	}
 
 	/**
 	 * Sets the URL.
 	 *
-	 * @param string $URL
+	 * @param string $url
 	 */
-	protected function setURL(string $URL) {
-		if ($parsedURL = parse_url($URL)) {
-			$this->scheme = $parsedURL['scheme'] ?? null;
-			$this->host = $parsedURL['host'] ?? null;
-			$this->port = isset($parsedURL['port']) ? (int)$parsedURL['port'] : null;
-			$this->user = $parsedURL['user'] ?? null;
-			$this->pass	= $parsedURL['pass'] ?? null;
-			$this->path = $parsedURL['path'] ?? null;
-			$this->fragment = $parsedURL['fragment'] ?? null;
-			if (isset($parsedURL['query']) && $parsedURL['query']) {
-				parse_str($parsedURL['query'], $this->query);
+	protected function setUrl(string $url) {
+		if ($parsedUrl = parse_url($url)) {
+			if (isset($parsedUrl['scheme']) && $parsedUrl['scheme']) {
+				$this->setScheme($parsedUrl['scheme']);
+			}
+			if (isset($parsedUrl['host']) && $parsedUrl['host']) {
+				$this->setHost($parsedUrl['host']);
+			}
+			if (isset($parsedUrl['port']) && $parsedUrl['port']) {
+				$this->setPort((int)$parsedUrl['port']);
+			}
+			if (isset($parsedUrl['user']) && $parsedUrl['user']) {
+				$this->setUser($parsedUrl['user']);
+			}
+			if (isset($parsedUrl['pass']) && $parsedUrl['pass']) {
+				$this->setPassword($parsedUrl['pass']);
+			}
+			if (isset($parsedUrl['fragment']) && $parsedUrl['fragment']) {
+				$this->setFragment($parsedUrl['fragment']);
+			}
+			if (isset($parsedUrl['query']) && $parsedUrl['query']) {
+				$this->setQueryString($parsedUrl['query']);
 			}
 		}
 	}
 
 	/**
-	 * @return string
+	 * Returns the URL scheme.
+	 *
+	 * @return null|string
 	 */
-	public function getScheme():string {
+	public function getScheme():?string {
 		return $this->scheme;
 	}
 
 	/**
-	 * @return string
+	 * Sets the URL scheme.
+	 *
+	 * @param null|string $scheme
 	 */
-	public function getHost():string {
+	public function setScheme(?string $scheme):void {
+		$this->scheme = $scheme;
+	}
+
+	/**
+	 * Sets the URL scheme using the current URI.
+	 */
+	public function setCurrentScheme():void {
+		$this->setScheme(@$_SERVER["HTTPS"] == "on" ? self::SCHEME_HTTPS : self::SCHEME_HTTP);
+	}
+
+	/**
+	 * @return null|string
+	 */
+	public function getHost():?string {
 		return $this->host;
 	}
 
 	/**
-	 * @return int
+	 * Sets the host name.
+	 *
+	 * @param null|string $host
 	 */
-	public function getPort():int {
+	public function setHost(?string $host):void {
+		$this->host = $host;
+	}
+
+	/**
+	 * Sets the host name using the current URI. If the port number is part of the host name, it is
+	 * also added to the URL.
+	 *
+	 * @return bool
+	 */
+	public function setCurrentHost():bool {
+		if (isset($_SERVER["HTTP_HOST"])) {
+			if (($pos = strpos($_SERVER["HTTP_HOST"], ":")) !== false) {
+				$this->setHost(substr($_SERVER["HTTP_HOST"], 0, $pos));
+				$this->setPort((int)substr($_SERVER["HTTP_HOST"], $pos + 1));
+			}
+			else {
+				$this->setHost($_SERVER["HTTP_HOST"]);
+			}
+			return true;
+		}
+		return false;
+	}
+
+	/**
+	 * Returns the host port number.
+	 *
+	 * @return int|null
+	 */
+	public function getPort():?int {
 		return $this->port;
 	}
 
 	/**
-	 * @return string
+	 * Sets the host port number.
+	 *
+	 * @param int|null $port
 	 */
-	public function getUser():string {
+	public function setPort(?int $port):void {
+		$this->port = $port;
+	}
+
+	/**
+	 * Sets the host port using the current URI.
+	 *
+	 * @return bool
+	 */
+	public function setCurrentPort():bool {
+		if (isset($_SERVER["HTTP_HOST"]) && ($pos = strpos($_SERVER["HTTP_HOST"], ":")) !== false) {
+			$this->setPort((int)substr($_SERVER["HTTP_HOST"], $pos + 1));
+			return true;
+		}
+		return false;
+	}
+
+	/**
+	 * Returns the user name.
+	 *
+	 * @return null|string
+	 */
+	public function getUser():?string {
 		return $this->user;
 	}
 
 	/**
-	 * @return string
+	 * Sets the user name.
+	 *
+	 * @param null|string $user
 	 */
-	public function getPass():string {
-		return $this->pass;
+	public function setUser(?string $user):void {
+		$this->user = $user;
 	}
 
 	/**
-	 * @return string
+	 * Sets the user name using the current URL data.
+	 *
+	 * @return bool
 	 */
-	public function getPath():string {
+	public function setCurrentUser():bool {
+		if (isset($_SERVER["PHP_AUTH_USER"])) {
+			$this->setUser($_SERVER["PHP_AUTH_USER"]);
+			return true;
+		}
+		return false;
+	}
+
+	/**
+	 * Returns the user password.
+	 *
+	 * @return null|string
+	 */
+	public function getPassword():?string {
+		return $this->password;
+	}
+
+	/**
+	 * Sets the user password.
+	 *
+	 * @param null|string $password
+	 */
+	public function setPassword(?string $password):void {
+		$this->password = $password;
+	}
+
+	/**
+	 * Sets the user password using the current URI.
+	 *
+	 * @return bool
+	 */
+	public function setCurrentPassword():bool {
+		if (isset($_SERVER["PHP_AUTH_PW"])) {
+			$this->setPassword($_SERVER["PHP_AUTH_PW"]);
+			return true;
+		}
+		return false;
+	}
+
+	/**
+	 * Returns the path.
+	 *
+	 * @return null|string
+	 */
+	public function getPath():?string {
 		return $this->path;
 	}
 
 	/**
-	 * @return string
+	 * Sets the path.
+	 *
+	 * @param null|string $path
 	 */
-	public function getFragment():string {
+	public function setPath(?string $path):void {
+		$this->path = $path;
+	}
+
+	/**
+	 * Sets the path using the current URI.
+	 *
+	 * @return bool
+	 */
+	public function setCurrentPath():bool {
+		if (isset($_SERVER["REQUEST_URI"])) {
+			if (($pos = strpos($_SERVER["REQUEST_URI"], "?")) !== false) {
+				$this->setPath(substr($_SERVER["REQUEST_URI"], 0, $pos));
+			}
+			else {
+				$this->setPath($_SERVER["REQUEST_URI"]);
+			}
+			return true;
+		}
+		return false;
+	}
+
+	/**
+	 * @return null|string
+	 */
+	public function getFragment():?string {
 		return $this->fragment;
+	}
+
+	/**
+	 * @param null|string $fragment
+	 */
+	public function setFragment(?string $fragment):void {
+		$this->fragment = $fragment;
 	}
 
 	/**
 	 * @return string
 	 */
-	public function getURL():string {
-		$URL = "";
-		if ($this->host) {
-			$URL .= ($this->scheme ?? "http")."://";
-			if ($this->user) {
-				$URL .= urlencode($this->user);
-				if ($this->pass) {
-					$URL .= ":".urlencode($this->path);
-				}
-				$URL .= "@";
+	public function __toString():string {
+		return $this->getUrl();
+	}
+
+	/**
+	 * Returns the query as a string.
+	 *
+	 * @param string|null $parameterSeparator
+	 * @return string
+	 */
+	public function getQueryString(string $parameterSeparator = null):string {
+		$queryString = "";
+		foreach ($this->query as $parameter => $value) {
+			if (!empty($queryString)) {
+				$queryString .= $parameterSeparator ?: "&";
 			}
-			$URL .= $this->host;
+			$queryString .= urlencode($parameter);
+			if ($value) {
+				$queryString .= "=".urlencode($value);
+			}
 		}
-		if ($this->path) {
-			$URL .= $this->path;
+		return $queryString;
+	}
+
+	/**
+	 * Sets the query from a string.
+	 *
+	 * @param string $queryString
+	 */
+	public function setQueryString(string $queryString):void {
+		parse_str($queryString, $this->query);
+	}
+
+	/**
+	 * Sets the query using the current URL.
+	 *
+	 * @return bool
+	 */
+	public function setCurrentQueryString():bool {
+		if (isset($_SERVER["REQUEST_URI"]) && ($pos = strpos($_SERVER["REQUEST_URI"], "?")) !== false) {
+			$this->setQueryString(substr($_SERVER["REQUEST_URI"], $pos + 1));
+			return true;
 		}
-		if ($this->query) {
-			$URL .= "?".$this->getQueryString();
-		}
-		if ($this->fragment) {
-			$URL .= "#".urlencode($this->fragment);
-		}
-		return $URL;
+		return false;
 	}
 
 	/**
 	 * @return array
 	 */
-	public function getQuery():array {
+	public function getQueryParameters():array {
 		return $this->query;
 	}
 
@@ -188,7 +393,7 @@ class Url {
 	 * @param string $parameter
 	 * @param string|null $value
 	 */
-	public function addQueryParameter(string $parameter, string $value = null) {
+	public function addQueryParameter(string $parameter, string $value = null):void {
 		$this->query[$parameter] = $value;
 	}
 
@@ -212,60 +417,67 @@ class Url {
 		return false;
 	}
 
-	public function removeAllQueryParameters() {
+	public function removeAllQueryParameters():void
+	{
 		$this->query = [];
 	}
 
 	/**
 	 * @param array $parameters
 	 */
-	public function addQueryParameters(array $parameters) {
+	public function addQueryParameters(array $parameters):void {
 		foreach ($parameters as $parameter => $value) {
 			$this->addQueryParameter($parameter, $value);
 		}
 	}
 
 	/**
-	 * @param string|null $parameterSeparator
-	 * @return string
-	 */
-	public function getQueryString(string $parameterSeparator = null):string {
-		$queryString = "";
-		foreach ($this->query as $parameter => $value) {
-			if (!empty($queryString)) $queryString .= $parameterSeparator ?? "&";
-			$queryString .= urlencode($parameter);
-			if ($value) $queryString .= "=".urlencode($value);
-		}
-		return $queryString;
-	}
-
-	/**
 	 * @param int|null $httpStatusCode
 	 * @param bool|null $replace
 	 */
-	public function redirect(int $httpStatusCode = null, bool $replace = null) {
-		header('Location: '.$this->getURL(), $replace ?? true, $httpStatusCode ?? 302);
+	public function redirect(int $httpStatusCode = null, bool $replace = null):void {
+		header('Location: '.$this->getUrl(), $replace ?: true,
+			$httpStatusCode ?: 302);
 		exit;
 	}
 
 	/**
-	 * @return string
+	 * @return null|string
 	 */
-	public function __toString():string {
-		return $this->getURL();
+	public function getUri():?string {
+		$uri = "";
+		if ($this->path) {
+			$uri .= $this->path;
+		}
+		if ($this->query) {
+			$uri .= "?".$this->getQueryString();
+		}
+		if ($this->fragment) {
+			$uri .= "#".urlencode($this->fragment);
+		}
+		return $uri ?: null;
 	}
 
 	/**
-	 * @return \ArrayIterator
+	 * @return null|string
 	 */
-	public function getIterator():\ArrayIterator {
-		return new \ArrayIterator($this->query);
-	}
-
-	/**
-	 * @return array
-	 */
-	public function &getAccessibleArray():array {
-		return $this->query;
+	public function getUrl():?string {
+		$url = "";
+		if ($this->host) {
+			$url .= ($this->scheme ?? self::DEFAULT_SCHEME)."://";
+			if ($this->user) {
+				$url .= urlencode($this->user);
+				if ($this->password) {
+					$url .= ":".urlencode($this->path);
+				}
+				$url .= "@";
+			}
+			$url .= $this->host;
+			if ($this->port) {
+				$url .= ":$this->port";
+			}
+		}
+		$url .= $this->getUri();
+		return $url ?: null;
 	}
 }
