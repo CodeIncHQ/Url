@@ -515,31 +515,28 @@ class Url {
 	}
 
 	/**
-	 * Returns the URI (path + query + fragment). Returns null if the URI is empty.
+	 * Returns the URI (path + query + fragment).
 	 *
-	 * @return null|string
+	 * @return string
 	 */
-	public function getUri():?string {
-		$uri = "";
-		if ($this->path) {
-			$uri .= $this->path;
-		}
+	public function getUri():string {
+		$uri = $this->path ?: "/";
 		if ($this->query) {
 			$uri .= "?".$this->getQueryString();
 		}
 		if ($this->fragment) {
 			$uri .= "#".urlencode($this->fragment);
 		}
-		return $uri ?: null;
+		return $uri;
 	}
 
 	/**
-	 * Returns the full URL (scheme + user + password + host + port + uri). Returns null if the URL is empty.
+	 * Returns the full URL (scheme + user + password + host + port + uri).
 	 *
 	 * @see Url::getUri()
-	 * @return null|string
+	 * @return string
 	 */
-	public function getUrl():?string {
+	public function getUrl():string {
 		$url = "";
 		if ($this->host) {
 			$url .= ($this->scheme ?? self::DEFAULT_SCHEME)."://";
@@ -556,7 +553,7 @@ class Url {
 			}
 		}
 		$url .= $this->getUri();
-		return $url ?: null;
+		return $url;
 	}
 
 	/**
