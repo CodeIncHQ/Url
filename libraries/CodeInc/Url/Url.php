@@ -17,9 +17,11 @@
 // Author:   Joan Fabrégat <joan@codeinc.fr>
 // Date:     29/11/2017
 // Time:     14:08
-// Project:  lib-gui
+// Project:  lib-url
 //
 namespace CodeInc\Url;
+use CodeInc\Url\Exceptions\RedirectEmptyUrlException;
+use CodeInc\Url\Exceptions\RedirectHeaderSentException;
 
 
 /**
@@ -32,49 +34,70 @@ class Url {
 	public const SCHEME_HTTP = "http";
 	public const SCHEME_HTTPS = "https";
 	public const DEFAULT_SCHEME = self::SCHEME_HTTP;
+	public const DEFAULT_REDIRECT_STATUS_CODE = 302;
+	public const DEFAULT_QUERY_PARAM_SEPARATOR = '&';
 
 	/**
+	 * URL scheme.
+	 *
+	 * @see Url::SCHEME_HTTP
+	 * @see Url::SCHEME_HTTPS
+	 * @see Url::DEFAULT_SCHEME
 	 * @var string|null
 	 */
 	private $scheme;
 
 	/**
+	 * URL host name or IP address.
+	 *
 	 * @var string|null
 	 */
 	private $host;
 
 	/**
+	 * URL port.
+	 *
 	 * @var int|null
 	 */
 	private $port;
 
 	/**
+	 * URL user.
+	 *
 	 * @var string|null
 	 */
 	private $user;
 
 	/**
+	 * URL password.
+	 *
 	 * @var string|null
 	 */
 	private $password;
 
 	/**
+	 * URL path.
+	 *
 	 * @var string|null
 	 */
 	private $path;
 
 	/**
+	 * URL query (assoc array)
+	 *
 	 * @var array
 	 */
 	private $query = [];
 
 	/**
+	 * URL fragment
+	 *
 	 * @var string|null
 	 */
 	private $fragment;
 
 	/**
-	 * URL constructor.
+	 * URL constructor. Sets te URL.
 	 *
 	 * @param string|null $url
 	 */
@@ -85,6 +108,8 @@ class Url {
 	}
 
 	/**
+	 * Creates a URL object using the parameters from the current URL (read from $_SERVER).
+	 *
 	 * @return Url
 	 */
 	public static function factoryFromCurrentUrl():Url {
@@ -103,7 +128,7 @@ class Url {
 	 *
 	 * @param string $url
 	 */
-	protected function setUrl(string $url) {
+	protected function setUrl(string $url):void {
 		if ($parsedUrl = parse_url($url)) {
 			if (isset($parsedUrl['scheme']) && $parsedUrl['scheme']) {
 				$this->setScheme($parsedUrl['scheme']);
@@ -139,7 +164,7 @@ class Url {
 	}
 
 	/**
-	 * Sets the URL scheme.
+	 * Sets the URL scheme. The scheme value must be a valid protocol (not validated).
 	 *
 	 * @param null|string $scheme
 	 */
@@ -155,6 +180,8 @@ class Url {
 	}
 
 	/**
+	 * Returns the host name or IP address or null if not set.
+	 *
 	 * @return null|string
 	 */
 	public function getHost():?string {
@@ -162,7 +189,7 @@ class Url {
 	}
 
 	/**
-	 * Sets the host name.
+	 * Sets the host name or IP address. Can be set to null to removed the host from the URL.
 	 *
 	 * @param null|string $host
 	 */
@@ -222,7 +249,7 @@ class Url {
 	}
 
 	/**
-	 * Returns the user name.
+	 * Returns the user name or null if not set.
 	 *
 	 * @return null|string
 	 */
@@ -231,7 +258,7 @@ class Url {
 	}
 
 	/**
-	 * Sets the user name.
+	 * Sets the user name. Can be set to null to remove the user (and password) from the URL.
 	 *
 	 * @param null|string $user
 	 */
@@ -240,7 +267,7 @@ class Url {
 	}
 
 	/**
-	 * Sets the user name using the current URL data.
+	 * Sets the user name using the current URL.
 	 *
 	 * @return bool
 	 */
@@ -253,7 +280,7 @@ class Url {
 	}
 
 	/**
-	 * Returns the user password.
+	 * Returns the user password or null if not set.
 	 *
 	 * @return null|string
 	 */
@@ -262,7 +289,7 @@ class Url {
 	}
 
 	/**
-	 * Sets the user password.
+	 * Sets the user password. Can be set to null to remove the password from the URL.
 	 *
 	 * @param null|string $password
 	 */
@@ -284,7 +311,7 @@ class Url {
 	}
 
 	/**
-	 * Returns the path.
+	 * Returns the path or null if not set.
 	 *
 	 * @return null|string
 	 */
@@ -293,7 +320,7 @@ class Url {
 	}
 
 	/**
-	 * Sets the path.
+	 * Sets the path. Can be set to null to remove the path from the URL.
 	 *
 	 * @param null|string $path
 	 */
@@ -320,6 +347,8 @@ class Url {
 	}
 
 	/**
+	 * Returns the URL fragment or null if not set.
+	 *
 	 * @return null|string
 	 */
 	public function getFragment():?string {
@@ -327,6 +356,8 @@ class Url {
 	}
 
 	/**
+	 * Sets the URL fragment. Can be set to null to remove the fragment from the URL.
+	 *
 	 * @param null|string $fragment
 	 */
 	public function setFragment(?string $fragment):void {
@@ -334,35 +365,30 @@ class Url {
 	}
 
 	/**
-	 * @return string
-	 */
-	public function __toString():string {
-		return $this->getUrl();
-	}
-
-	/**
-	 * Returns the query as a string.
+	 * Returns the query parameters as a string or null if the query is empty.
 	 *
-	 * @param string|null $parameterSeparator
-	 * @return string
+	 * @see Url::DEFAULT_QUERY_PARAM_SEPARATOR
+	 * @param string|null $paramSeparator (default: '&')
+	 * @return string|null
 	 */
-	public function getQueryString(string $parameterSeparator = null):string {
+	public function getQueryString(string $paramSeparator = null):?string {
 		$queryString = "";
 		foreach ($this->query as $parameter => $value) {
 			if (!empty($queryString)) {
-				$queryString .= $parameterSeparator ?: "&";
+				$queryString .= $paramSeparator ?: self::DEFAULT_QUERY_PARAM_SEPARATOR;
 			}
 			$queryString .= urlencode($parameter);
 			if ($value) {
 				$queryString .= "=".urlencode($value);
 			}
 		}
-		return $queryString;
+		return $queryString ?: null;
 	}
 
 	/**
-	 * Sets the query from a string.
+	 * Sets the query parameters from a string (parsed using parse_str()).
 	 *
+	 * @see parse_str()
 	 * @param string $queryString
 	 */
 	public function setQueryString(string $queryString):void {
@@ -370,7 +396,7 @@ class Url {
 	}
 
 	/**
-	 * Sets the query using the current URL.
+	 * Sets the query parameters using the current URL.
 	 *
 	 * @return bool
 	 */
@@ -383,6 +409,8 @@ class Url {
 	}
 
 	/**
+	 * Returns the query parameters in an array.
+	 *
 	 * @return array
 	 */
 	public function getQueryParameters():array {
@@ -390,58 +418,105 @@ class Url {
 	}
 
 	/**
-	 * @param string $parameter
-	 * @param string|null $value
+	 * Add extra query parameters. Previously defined parameters are kept expect for duplicates which are replaced
+	 * with the new parameters values.
+	 *
+	 * @param array $parameters
 	 */
-	public function addQueryParameter(string $parameter, string $value = null):void {
-		$this->query[$parameter] = $value;
-	}
-
-	/**
-	 * @param string $parameter
-	 * @return bool
-	 */
-	public function hasQueryParameter(string $parameter):bool {
-		return array_key_exists($parameter, $this->query);
-	}
-
-	/**
-	 * @param string $parameter
-	 * @return bool
-	 */
-	public function removeQueryParameter(string $parameter):bool {
-		if ($this->hasQueryParameter($parameter)) {
-			unset($this->query[$parameter]);
-			return true;
+	public function addQueryParameters(array $parameters):void {
+		foreach ($parameters as $paramName => $value) {
+			$this->setQueryParameter((string)$paramName, $value !== null ? (string)$value : null);
 		}
-		return false;
 	}
 
-	public function removeAllQueryParameters():void
-	{
+	/**
+	 * Replaces all the parameters with new ones.
+	 *
+	 * @param array $parameters
+	 */
+	public function setQueryParameters(array $parameters):void {
+		$this->removeAllQueryParameters();
+		$this->addQueryParameters($parameters);
+	}
+
+	/**
+	 * Removes all query parameters.
+	 */
+	public function removeAllQueryParameters():void {
 		$this->query = [];
 	}
 
 	/**
-	 * @param array $parameters
+	 * Sets a query parameter.
+	 *
+	 * @param string $paramName
+	 * @param string|null $value
 	 */
-	public function addQueryParameters(array $parameters):void {
-		foreach ($parameters as $parameter => $value) {
-			$this->addQueryParameter($parameter, $value);
+	public function setQueryParameter(string $paramName, string $value = null):void {
+		$this->query[$paramName] = $value;
+	}
+
+	/**
+	 * Verifies if a query parameter is set.
+	 *
+	 * @param string $paramName
+	 * @return bool
+	 */
+	public function hasQueryParameter(string $paramName):bool {
+		return isset($this->query[$paramName]);
+	}
+
+	/**
+	 * Returns the value of a query parameter or null if not set.
+	 *
+	 * @param string $paramName
+	 * @return string|null
+	 */
+	public function getQueryParameter(string $paramName):?string {
+		return $this->query[$paramName] ?? null;
+	}
+
+	/**
+	 * Removes a query parameter.
+	 *
+	 * @param string $paramName
+	 */
+	public function removeQueryParameter(string $paramName):void {
+		if ($this->hasQueryParameter($paramName)) {
+			unset($this->query[$paramName]);
 		}
 	}
 
 	/**
-	 * @param int|null $httpStatusCode
-	 * @param bool|null $replace
+	 * Redirects to the URL using a "location" header. The HTTP status code is modified (by default to 302).
+	 *
+	 * @see Url::DEFAULT_REDIRECT_STATUS_CODE
+	 * @param int|null $httpStatusCode (default : 302)
+	 * @param bool|null $replace (default: true)
+	 * @param bool|null $doNotStop (default: false) Does not stop the script execution after the redirect
+	 * @throws RedirectEmptyUrlException
+	 * @throws RedirectHeaderSentException
 	 */
-	public function redirect(int $httpStatusCode = null, bool $replace = null):void {
-		header('Location: '.$this->getUrl(), $replace ?: true,
-			$httpStatusCode ?: 302);
-		exit;
+	public function redirect(int $httpStatusCode = null, bool $replace = null, bool $doNotStop = null):void {
+		// checking...
+		if (($url = $this->getUrl()) === null) {
+			throw new RedirectEmptyUrlException($this);
+		}
+		if (headers_sent()) {
+			throw new RedirectHeaderSentException($this);
+		}
+
+		// redirecting...
+		header("Location: $url", $replace ?: true,
+			$httpStatusCode ?: self::DEFAULT_REDIRECT_STATUS_CODE);
+		if ($doNotStop !== true) {
+			exit;
+		}
 	}
 
 	/**
+	 * Returns the URI (path + query + fragment). Returns null if the URI is empty.
+	 *
 	 * @return null|string
 	 */
 	public function getUri():?string {
@@ -459,6 +534,9 @@ class Url {
 	}
 
 	/**
+	 * Returns the full URL (scheme + user + password + host + port + uri). Returns null if the URL is empty.
+	 *
+	 * @see Url::getUri()
 	 * @return null|string
 	 */
 	public function getUrl():?string {
@@ -479,5 +557,37 @@ class Url {
 		}
 		$url .= $this->getUri();
 		return $url ?: null;
+	}
+
+	/**
+	 * Returns the URL. Alias of getUrl()
+	 *
+	 * @see Url::getUrl()
+	 * @return string
+	 */
+	public function __toString():string {
+		return $this->getUrl();
+	}
+
+	/**
+	 * Returns a query parameter value. Alias of getQueryParameter().
+	 *
+	 * @see Url::getQueryParameter()
+	 * @param $paramName
+	 * @return null|string
+	 */
+	public function __get($paramName):?string {
+		return $this->getQueryParameter((string)$paramName);
+	}
+
+	/**
+	 * Sets a query parameter value. Alias of setQueryParameter().
+	 *
+	 * @see Url::setQueryParameter()
+	 * @param $paramName
+	 * @param $value
+	 */
+	public function __set($paramName, $value):void {
+		$this->setQueryParameter($paramName, $value !== null ? (string)$value : null);
 	}
 }

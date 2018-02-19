@@ -1,7 +1,7 @@
 <?php
 //
 // +---------------------------------------------------------------------+
-// | CODE INC. SOURCE CODE - CONFIDENTIAL                                |
+// | CODE INC. SOURCE CODE                                               |
 // +---------------------------------------------------------------------+
 // | Copyright (c) 2017 - Code Inc. SAS - All Rights Reserved.           |
 // | Visit https://www.codeinc.fr for more information about licensing.  |
@@ -15,19 +15,30 @@
 // +---------------------------------------------------------------------+
 //
 // Author:   Joan Fabrégat <joan@codeinc.fr>
-// Date:     04/12/2017
-// Time:     18:28
+// Date:     19/02/2018
+// Time:     12:34
 // Project:  lib-url
 //
-namespace CodeInc\Url;
+namespace CodeInc\Url\Exceptions;
+use CodeInc\Url\Url;
+use Throwable;
 
 
 /**
- * Class UrlException
+ * Class RedirectHeaderSentException
  *
- * @package CodeInc\Url
+ * @package CodeInc\Url\Exceptions
  * @author Joan Fabrégat <joan@codeinc.fr>
  */
-class UrlException extends \Exception {
-
+class RedirectHeaderSentException extends UrlException {
+	/**
+	 * HeaderSentException constructor.
+	 *
+	 * @param Url $url
+	 * @param null|Throwable $previous
+	 */
+	public function __construct(Url $url, ?Throwable $previous = null) {
+		parent::__construct("Unable to redirect to \"{$url->getUrl()}\", the headers have already been sent",
+			$url, $previous);
+	}
 }
