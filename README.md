@@ -2,6 +2,16 @@
 
 Simple PHP library to manipulates URLs. 
 
+
+## Install
+
+This library is available through [Packagist](https://packagist.org/packages/codeinchq/lib-url) and can be installed using [Composer](https://getcomposer.org/): 
+
+```bash
+composer require codeinchq/lib-url
+```
+
+
 ## Usage
 
 Parsing a URL:
@@ -26,6 +36,7 @@ $url->setScheme($url::SCHEME_HTTPS);
 $url->setQueryParameter("q", "A great search");
 echo $url->getUrl();
 ```
+
 
 ## Tests
 
