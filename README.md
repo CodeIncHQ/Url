@@ -1,6 +1,6 @@
 # Code Inc.'s URL library
 
-Simple PHP library to manipulates URLs. 
+A simple PHP 7 library to manipulates URLs. 
 
 
 ## Install
