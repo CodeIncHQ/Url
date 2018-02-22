@@ -20,7 +20,7 @@
 // Project:  lib-url
 //
 declare(strict_types=1);
-namespace Tests\CodeInc\Url;
+namespace CodeInc\Url\Tests;
 use CodeInc\Url\Url;
 use PHPUnit\Framework\TestCase;
 
