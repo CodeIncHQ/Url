@@ -1,7 +1,6 @@
 # Code Inc.'s URL library
 
-A simple PHP 7 library to manipulates URLs. 
-
+A PHP 7 library to manipulates URLs. This library is compatible with [PSR7](https://www.php-fig.org/psr/psr-7/) [`UriInterface`](https://www.php-fig.org/psr/psr-7/#35-psrhttpmessageuriinterface) through the `Psr7Url` and `Psr7ServerUrl` classes.
 
 ## Install
 
@@ -14,7 +13,7 @@ composer require codeinchq/lib-url
 
 ## Usage
 
-Parsing a URL:
+### Parsing a URL:
 ```php
 <?php
 use CodeInc\Url\Url;
@@ -25,7 +24,7 @@ if ($url->hasQueryParameter("p")) {
 }
 ```
 
-Building a URL:
+### Building a URL:
 ```php
 <?php 
 use CodeInc\Url\Url;
@@ -34,6 +33,15 @@ $url = new Url();
 $url->setHost("www.google.com");
 $url->setScheme($url::SCHEME_HTTPS);
 $url->setQueryParameter("q", "A great search");
+echo $url->getUrl();
+```
+
+### Getting the current URL:
+```php
+<?php 
+use CodeInc\Url\ServerUrl;
+
+$url = new ServerUrl();
 echo $url->getUrl();
 ```
 
