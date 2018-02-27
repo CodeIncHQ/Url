@@ -20,7 +20,7 @@
 // Project:  lib-url
 //
 namespace CodeInc\Url\Exceptions;
-use CodeInc\Url\Url;
+use CodeInc\Url\UrlInterface;
 use Throwable;
 
 
@@ -34,10 +34,11 @@ class RedirectHeaderSentException extends UrlException {
 	/**
 	 * HeaderSentException constructor.
 	 *
-	 * @param Url $url
+	 * @param UrlInterface $url
 	 * @param null|Throwable $previous
 	 */
-	public function __construct(Url $url, ?Throwable $previous = null) {
+	public function __construct(UrlInterface $url, ?Throwable $previous = null)
+	{
 		parent::__construct("Unable to redirect to \"{$url->getUrl()}\", the headers have already been sent",
 			$url, $previous);
 	}

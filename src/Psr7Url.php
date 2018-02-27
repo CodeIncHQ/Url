@@ -27,16 +27,15 @@ use Psr\Http\Message\UriInterface;
 /**
  * Class Psr7Url
  *
- * @package CodeInc\Url
- * @link https://www.php-fig.org/psr/psr-7/#35-psrhttpmessageuriinterface
+ * @package CodeInc\Url\Psr7
  * @author Joan Fabrégat <joan@codeinc.fr>
  */
-class Psr7Url extends Url implements UriInterface {
+class Psr7Url extends ImmutableUrl implements UriInterface {
 	/**
 	 * @inheritdoc
 	 * @return null|string
 	 */
-	public function getUserInfo():?string 
+	public function getUserInfo():?string
 	{
 		if ($user = $this->getUser()) {
 			$userInfo = urlencode($user);
@@ -46,6 +45,74 @@ class Psr7Url extends Url implements UriInterface {
 			return $userInfo;
 		}
 		return null;
+	}
+
+	/**
+	 * Compatibility with UriInteface
+	 *
+	 * @inheritdoc
+	 * @param string $scheme
+	 */
+	public function withScheme($scheme)
+	{
+		return parent::withScheme((string)$scheme);
+	}
+
+	/**
+	 * Compatibility with UriInteface
+	 *
+	 * @inheritdoc
+	 * @param string $host
+	 */
+	public function withHost($host)
+	{
+		return parent::withHost((string)$host);
+	}
+
+	/**
+	 * Compatibility with UriInteface
+	 *
+	 * @inheritdoc
+	 * @param int $port
+	 */
+	public function withPort($port)
+	{
+		return parent::withPort((int)$port);
+	}
+
+	/**
+	 * Compatibility with UriInteface
+	 *
+	 * @inheritdoc
+	 * @param string $path
+	 */
+	public function withPath($path)
+	{
+		return parent::withPath((string)$path);
+	}
+
+	/**
+	 * Compatibility with UriInteface
+	 *
+	 * @inheritdoc
+	 * @param string $fragment
+	 */
+	public function withFragment($fragment)
+	{
+		return parent::withFragment((string)$fragment);
+	}
+
+	/**
+	 * Compatibility with UriInteface
+	 *
+	 * @inheritdoc
+	 * @see UriInterface::withQuery()
+	 * @see ImmutableUrl::withQueryString()
+	 * @param string $host
+	 */
+	public function withQuery($parameters)
+	{
+		return parent::withQueryString((string)$parameters);
 	}
 
 	/**
@@ -70,87 +137,15 @@ class Psr7Url extends Url implements UriInterface {
 
 	/**
 	 * @inheritdoc
-	 * @param string $fragment
-	 * @return Psr7Url
-	 */
-	public function withFragment($fragment):Psr7Url
-	{
-		$url = clone $this;
-		$url->setFragment((string)$fragment);
-		return $url;
-	}
-
-	/**
-	 * @inheritdoc
-	 * @param string $host
-	 * @return Psr7Url
-	 */
-	public function withHost($host):Psr7Url
-	{
-		$url = clone $this;
-		$url->setHost((string)$host);
-		return $url;
-	}
-
-	/**
-	 * @inheritdoc
-	 * @param string $path
-	 * @return Psr7Url
-	 */
-	public function withPath($path):Psr7Url
-	{
-		$url = clone $this;
-		$url->setPath((string)$path);
-		return $url;
-	}
-
-	/**
-	 * @inheritdoc
-	 * @param int|null $port
-	 * @return Psr7Url
-	 */
-	public function withPort($port):Psr7Url
-	{
-		$url = clone $this;
-		$url->setPort((int)$port);
-		return $url;
-	}
-
-	/**
-	 * @inheritdoc
-	 * @param string $query
-	 * @return Psr7Url
-	 */
-	public function withQuery($query):Psr7Url
-	{
-		$url = clone $this;
-		$url->setQuery((array)$query);
-		return $url;
-	}
-
-	/**
-	 * @inheritdoc
-	 * @param string $scheme
-	 * @return Psr7Url
-	 */
-	public function withScheme($scheme):Psr7Url
-	{
-		$url = clone $this;
-		$url->setScheme((string)$scheme);
-		return $url;
-	}
-
-	/**
-	 * @inheritdoc
 	 * @param string $user
 	 * @param null $password
-	 * @return Psr7Url
+	 * @return static
 	 */
-	public function withUserInfo($user, $password = null):Psr7Url
+	public function withUserInfo($user, $password = null)
 	{
 		$url = clone $this;
-		$url->setUser((string)$user);
-		if ($password !== null) $this->setPassword((string)$password);
+		$url->user = (string)$user;
+		$this->password = (string)$password;
 		return $url;
 	}
 }

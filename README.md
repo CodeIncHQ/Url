@@ -13,36 +13,34 @@ composer require codeinchq/lib-url
 
 ## Usage
 
-### Parsing a URL:
 ```php
 <?php
 use CodeInc\Url\Url;
+use CodeInc\Url\ImmutableUrl;
+use CodeInc\Url\UrlGlobals;
 
+// parsing a URL
 $url = new Url("https://www.google.com/?q=A+great+search");
 if ($url->hasQueryParameter("p")) {
 	echo $url->getQueryParameter("p");
 }
-```
 
-### Building a URL:
-```php
-<?php 
-use CodeInc\Url\Url;
-
+// building a URL
 $url = new Url();
 $url->setHost("www.google.com");
-$url->setScheme($url::SCHEME_HTTPS);
+$url->setScheme("https");
 $url->setQueryParameter("q", "A great search");
 echo $url->getUrl();
-```
 
-### Getting the current URL:
-```php
-<?php 
-use CodeInc\Url\ServerUrl;
+// getting the current URL
+$currentUrl = Url::fromGlobals();
 
-$url = new ServerUrl();
-echo $url->getUrl();
+// getting a immuable URL
+$immuableUrl = new ImmutableUrl("https://www.google.com/?q=A+great+search");
+$newImmuableUrl = $immuableUrl->withHost("www.google.fr");
+
+// getting infos about the current URL
+echo UrlGlobals::getCurrentHost().":".UrlGlobals::getCurrentPort();
 ```
 
 

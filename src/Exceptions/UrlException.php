@@ -20,7 +20,7 @@
 // Project:  lib-url
 //
 namespace CodeInc\Url\Exceptions;
-use CodeInc\Url\Url;
+use CodeInc\Url\UrlInterface;
 use Throwable;
 
 
@@ -32,7 +32,7 @@ use Throwable;
  */
 class UrlException extends \Exception {
 	/**
-	 * @var Url
+	 * @var UrlInterface
 	 */
 	private $url;
 
@@ -40,10 +40,10 @@ class UrlException extends \Exception {
 	 * UrlException constructor.
 	 *
 	 * @param string $message
-	 * @param Url $url
+	 * @param UrlInterface $url
 	 * @param Throwable|null $previous
 	 */
-	public function __construct(string $message = "", Url $url, Throwable $previous = null) {
+	public function __construct(string $message = "", UrlInterface $url, Throwable $previous = null) {
 		$this->url = $url;
 		parent::__construct($message, 0, $previous);
 	}
@@ -51,9 +51,9 @@ class UrlException extends \Exception {
 	/**
 	 * Returns the parent URL object.
 	 *
-	 * @return Url
+	 * @return UrlInterface
 	 */
-	public function getUrl():Url {
+	public function getUrl():UrlInterface {
 		return $this->url;
 	}
 }
