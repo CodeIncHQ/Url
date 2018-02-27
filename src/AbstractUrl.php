@@ -23,6 +23,7 @@ declare(strict_types = 1);
 namespace CodeInc\Url;
 use CodeInc\Url\Exceptions\RedirectEmptyUrlException;
 use CodeInc\Url\Exceptions\RedirectHeaderSentException;
+use Psr\Http\Message\ServerRequestInterface;
 
 
 /**
@@ -35,6 +36,14 @@ abstract class AbstractUrl implements UrlInterface {
 	public const DEFAULT_SCHEME = "http";
 	public const DEFAULT_REDIRECT_STATUS_CODE = 302;
 	public const DEFAULT_QUERY_PARAM_SEPARATOR = '&';
+
+	private const PORTS_NUMBERS = [
+		"ftp" => 21,
+		"ssh" => 22,
+		"sftp" => 22,
+		"http" => 80,
+		"https" => 443
+	];
 
 	/**
 	 * URL scheme.
@@ -108,19 +117,85 @@ abstract class AbstractUrl implements UrlInterface {
 	}
 
 	/**
-	 * Creates a URL object using the parameters from the current URL (read from $_SERVER).
-	 *
+	 * @param bool|null $scheme
+	 * @param bool|null $host
+	 * @param bool|null $port
+	 * @param bool|null $path
+	 * @param bool|null $user
+	 * @param bool|null $password
+	 * @param bool|null $query
 	 * @return static
 	 */
-	public static function fromGlobals():self
+	public static function fromGlobals(?bool $scheme = null, ?bool $host = null, ?bool $port = null,
+		?bool $path = null, ?bool $user = null, ?bool $password = null, ?bool $query = null)
 	{
 		$url = new static;
-		$url->scheme = UrlGlobals::getCurrentScheme();
-		$url->host = UrlGlobals::getCurrentHost();
-		$url->path = UrlGlobals::getCurrentPath();
-		$url->user = UrlGlobals::getCurrentUser();
-		$url->password = UrlGlobals::getCurrentPassword();
-		$url->query = UrlGlobals::getCurrentQuery();
+		if ($scheme === null || $scheme) {
+			$url->scheme = UrlGlobals::getCurrentScheme();
+		}
+		if ($host === null || $host) {
+			$url->host = UrlGlobals::getCurrentHost();
+		}
+		if ($port === null || $port) {
+			$url->port = UrlGlobals::getCurrentPort();
+		}
+		if ($path === null || $path) {
+			$url->path = UrlGlobals::getCurrentPath();
+		}
+		if ($user === null || $user) {
+			$url->user = UrlGlobals::getCurrentUser();
+		}
+		if ($password === null || $password) {
+			$url->password = UrlGlobals::getCurrentPassword();
+		}
+		if ($query === null || $query) {
+			$url->query = UrlGlobals::getCurrentQuery();
+		}
+		return $url;
+	}
+
+	/**
+	 * @param ServerRequestInterface $request
+	 * @param bool|null $scheme
+	 * @param bool|null $host
+	 * @param bool|null $port
+	 * @param bool|null $path
+	 * @param bool|null $user
+	 * @param bool|null $password
+	 * @param bool|null $query
+	 * @return static
+	 */
+	public static function fromRequest(ServerRequestInterface $request, ?bool $scheme = null, ?bool $host = null,
+		?bool $port = null, ?bool $path = null, ?bool $user = null, ?bool $password = null, ?bool $query = null)
+	{
+		$url = new static;
+		$requestUri = $request->getUri();
+		if ($scheme === null || $scheme) {
+			$url->scheme = $requestUri->getScheme();
+		}
+		if ($host === null || $host) {
+			$url->host = $requestUri->getHost();
+		}
+		if ($port === null || $port) {
+			$url->port = $requestUri->getPort();
+		}
+		if ($path === null || $path) {
+			$url->path = $requestUri->getPath();
+		}
+		if ($user === null || $user || $password === null || $password) {
+			if ($userInfo = $requestUri->getUserInfo()) {
+				$userInfo = explode(":", $userInfo);
+				if ($user === null || $user) {
+					$url->user = $userInfo[0] ?? null;
+				}
+				if ($password === null || $password) {
+					$url->password = $userInfo[1] ?? null;
+				}
+			}
+		}
+		if ($query === null || $query) {
+			parse_str($requestUri->getQuery(), $url->query);
+		}
 		return $url;
 	}
 
@@ -318,7 +393,8 @@ abstract class AbstractUrl implements UrlInterface {
 		$url = "";
 
 		if ($includeHost !== false && $this->host) {
-			$url .= ($this->scheme ?? self::DEFAULT_SCHEME)."://";
+			$scheme = $this->scheme ?? self::DEFAULT_SCHEME;
+			$url .= "$scheme://";
 
 			// user + pass
 			if ($includeUser !== false && $this->user) {
@@ -333,7 +409,9 @@ abstract class AbstractUrl implements UrlInterface {
 			$url .= $this->host;
 
 			// port
-			if ($includePort !== false && $this->port) {
+			if ($includePort !== false && $this->port
+				&& (!isset(self::PORTS_NUMBERS[$scheme]) || $this->port != self::PORTS_NUMBERS[$scheme]))
+			{
 				$url .= ":$this->port";
 			}
 
