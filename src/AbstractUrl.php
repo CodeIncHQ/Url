@@ -208,7 +208,7 @@ abstract class AbstractUrl implements UrlInterface {
 	{
 		if ($parsedUrl = parse_url($url)) {
 			if (isset($parsedUrl['scheme']) && $parsedUrl['scheme']) {
-				$$this->scheme = strtolower($parsedUrl['scheme']);
+				$this->scheme = strtolower($parsedUrl['scheme']);
 			}
 			if (isset($parsedUrl['host']) && $parsedUrl['host']) {
 				$this->host = $parsedUrl['host'];
