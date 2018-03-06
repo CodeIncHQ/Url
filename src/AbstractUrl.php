@@ -48,9 +48,9 @@ abstract class AbstractUrl implements UrlInterface {
 	/**
 	 * URL scheme.
 	 *
-	 * @see Url::SCHEME_HTTP
-	 * @see Url::SCHEME_HTTPS
-	 * @see Url::DEFAULT_SCHEME
+	 * @see Url2::SCHEME_HTTP
+	 * @see Url2::SCHEME_HTTPS
+	 * @see Url2::DEFAULT_SCHEME
 	 * @var string|null
 	 */
 	protected $scheme;
