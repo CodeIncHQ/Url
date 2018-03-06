@@ -29,12 +29,12 @@ namespace CodeInc\Url;
  * @package CodeInc\Url
  * @author Joan Fabrégat <joan@codeinc.fr>
  */
-class Url2 extends AbstractUrl {
+class Url extends AbstractUrl {
 	/**
 	 * Sets the URL scheme.
 	 *
-	 * @see Url2::SCHEME_HTTPS
-	 * @see Url2::SCHEME_HTTP
+	 * @see Url::SCHEME_HTTPS
+	 * @see Url::SCHEME_HTTP
 	 * @param string $scheme
 	 */
 	public function setScheme(string $scheme):void

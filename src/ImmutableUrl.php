@@ -33,8 +33,8 @@ class ImmutableUrl extends AbstractUrl {
 	/**
 	 * Returns the URL with a new scheme.
 	 *
-	 * @see Url2::SCHEME_HTTPS
-	 * @see Url2::SCHEME_HTTP
+	 * @see Url::SCHEME_HTTPS
+	 * @see Url::SCHEME_HTTP
 	 * @param string $scheme
 	 * @return static
 	 */

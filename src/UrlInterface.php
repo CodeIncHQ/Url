@@ -92,7 +92,7 @@ interface UrlInterface {
 	/**
 	 * Returns the query parameters as a string or null if the query is empty.
 	 *
-	 * @see Url2::DEFAULT_QUERY_PARAM_SEPARATOR
+	 * @see Url::DEFAULT_QUERY_PARAM_SEPARATOR
 	 * @param string|null $paramSeparator (default: '&')
 	 * @return string|null
 	 */
@@ -124,7 +124,7 @@ interface UrlInterface {
 	/**
 	 * Redirects to the URL using a "location" header. The HTTP status code is modified (by default to 302).
 	 *
-	 * @see Url2::DEFAULT_REDIRECT_STATUS_CODE
+	 * @see Url::DEFAULT_REDIRECT_STATUS_CODE
 	 * @param int|null $httpStatusCode (default : 302)
 	 * @param bool|null $replace (default: true)
 	 * @param bool|null $doNotStop (default: false) Does not stop the script execution after the redirect
@@ -136,7 +136,7 @@ interface UrlInterface {
 	/**
 	 * Returns the full URL (scheme + user + password + host + port + uri).
 	 *
-	 * @see Url2::buildUrl()
+	 * @see Url::buildUrl()
 	 * @return string
 	 */
 	public function getUrl():string;
@@ -157,7 +157,7 @@ interface UrlInterface {
 	/**
 	 * Returns the URL. Alias of getUrl()
 	 *
-	 * @see Url2::getUrl()
+	 * @see Url::getUrl()
 	 * @return string
 	 */
 	public function __toString():string;

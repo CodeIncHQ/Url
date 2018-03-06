@@ -21,7 +21,7 @@
 //
 declare(strict_types=1);
 namespace CodeInc\Url\Tests;
-use CodeInc\Url\Url2;
+use CodeInc\Url\Url;
 use PHPUnit\Framework\TestCase;
 
 /**
@@ -49,7 +49,7 @@ class UrlTest extends TestCase {
 	 * Tests the URL builder.
 	 */
 	public function testUrlBuilder():void {
-		$url = new Url2();
+		$url = new Url();
 		$url->setScheme(self::TEST_SCHEME);
 		$url->setUser(self::TEST_USER);
 		$url->setPassword(self::TEST_PASSWORD);
@@ -65,7 +65,7 @@ class UrlTest extends TestCase {
 	 * Tests the URL parser.
 	 */
 	public function testUrlParser():void {
-		$url = new Url2(self::TEST_URL);
+		$url = new Url(self::TEST_URL);
 		$this->assertSame(self::TEST_SCHEME, $url->getScheme());
 		$this->assertSame(self::TEST_USER, $url->getUser());
 		$this->assertSame(self::TEST_PASSWORD, $url->getPassword());
