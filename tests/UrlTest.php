@@ -17,7 +17,7 @@
 // Author:   Joan Fabrégat <joan@codeinc.fr>
 // Date:     19/02/2018
 // Time:     12:46
-// Project:  lib-url
+// Project:  Url
 //
 declare(strict_types=1);
 namespace CodeInc\Url\Tests;

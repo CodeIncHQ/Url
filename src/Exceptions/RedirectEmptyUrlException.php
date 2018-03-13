@@ -17,7 +17,7 @@
 // Author:   Joan Fabrégat <joan@codeinc.fr>
 // Date:     19/02/2018
 // Time:     12:35
-// Project:  lib-url
+// Project:  Url
 //
 namespace CodeInc\Url\Exceptions;
 use CodeInc\Url\UrlInterface;

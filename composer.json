@@ -1,8 +1,8 @@
 {
-  "name": "codeinc/lib-url",
+  "name": "codeinc/url",
   "version": "1.3.5",
-  "description": "PHP URL manipulation library",
-  "homepage": "https://github.com/CodeIncHQ/lib-url",
+  "description": "URL manipulation library",
+  "homepage": "https://github.com/CodeIncHQ/Url",
   "type": "library",
   "license": "MIT",
   "require": {
