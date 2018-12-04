@@ -3,7 +3,7 @@
 // +---------------------------------------------------------------------+
 // | CODE INC. SOURCE CODE                                               |
 // +---------------------------------------------------------------------+
-// | Copyright (c) 2017 - Code Inc. SAS - All Rights Reserved.           |
+// | Copyright (c) 2018 - Code Inc. SAS - All Rights Reserved.           |
 // | Visit https://www.codeinc.fr for more information about licensing.  |
 // +---------------------------------------------------------------------+
 // | NOTICE:  All information contained herein is, and remains the       |
@@ -21,8 +21,6 @@
 //
 declare(strict_types = 1);
 namespace CodeInc\Url;
-use CodeInc\Url\Exceptions\RedirectEmptyUrlException;
-use CodeInc\Url\Exceptions\RedirectHeaderSentException;
 
 
 /**
@@ -31,21 +29,14 @@ use CodeInc\Url\Exceptions\RedirectHeaderSentException;
  * @package CodeInc\Url
  * @author Joan Fabrégat <joan@codeinc.fr>
  */
-interface UrlInterface {
+interface UrlInterface extends \ArrayAccess, \Traversable
+{
 	/**
 	 * Returns the URL scheme.
 	 *
 	 * @return null|string
 	 */
 	public function getScheme():?string;
-
-	/**
-	 * Verifies if the URL has a given scheme.
-	 *
-	 * @param string $scheme
-	 * @return bool
-	 */
-	public function hasScheme(string $scheme):bool;
 
 	/**
 	 * Returns the host name or IP address or null if not set.
@@ -106,32 +97,12 @@ interface UrlInterface {
 	public function getQuery():array;
 
 	/**
-	 * Verifies if a query parameter is set.
-	 *
-	 * @param string $paramName
-	 * @return bool
-	 */
-	public function hasQueryParameter(string $paramName):bool;
-
-	/**
 	 * Returns the value of a query parameter or null if not set.
 	 *
 	 * @param string $paramName
 	 * @return string|null
 	 */
 	public function getQueryParameter(string $paramName):?string;
-
-	/**
-	 * Redirects to the URL using a "location" header. The HTTP status code is modified (by default to 302).
-	 *
-	 * @see Url::DEFAULT_REDIRECT_STATUS_CODE
-	 * @param int|null $httpStatusCode (default : 302)
-	 * @param bool|null $replace (default: true)
-	 * @param bool|null $doNotStop (default: false) Does not stop the script execution after the redirect
-	 * @throws RedirectEmptyUrlException
-	 * @throws RedirectHeaderSentException
-	 */
-	public function redirect(?int $httpStatusCode = null, ?bool $replace = null, ?bool $doNotStop = null):void;
 
 	/**
 	 * Returns the full URL (scheme + user + password + host + port + uri).
