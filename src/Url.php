@@ -21,8 +21,6 @@
 //
 declare(strict_types=1);
 namespace CodeInc\Url;
-
-
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\UriInterface;
 
@@ -256,15 +254,17 @@ class Url implements UrlInterface, \IteratorAggregate
 
 
     /**
-	 * Sets the URL scheme.
-	 *
-	 * @see Url::SCHEME_HTTPS
-	 * @see Url::SCHEME_HTTP
+     * Sets the URL scheme.
+     *
+     * @see Url::SCHEME_HTTPS
+     * @see Url::SCHEME_HTTP
      * @param string|null $scheme
+     * @return Url
      */
-    public function setScheme(?string $scheme):void
+    public function setScheme(?string $scheme):self
     {
         $this->scheme = $scheme;
+        return $this;
     }
 
     /**
@@ -277,13 +277,15 @@ class Url implements UrlInterface, \IteratorAggregate
     }
 
     /**
-	 * Sets the host name or IP address.
-	 *
+     * Sets the host name or IP address.
+     *
      * @param string|null $host
+     * @return Url
      */
-    public function setHost(?string $host):void
+    public function setHost(?string $host):self
     {
         $this->host = $host;
+        return $this;
     }
 
     /**
@@ -296,13 +298,15 @@ class Url implements UrlInterface, \IteratorAggregate
     }
 
     /**
-	 * Sets the host port number.
-	 *
+     * Sets the host port number.
+     *
      * @param int|null $port
+     * @return Url
      */
-    public function setPort(?int $port):void
+    public function setPort(?int $port):self
     {
         $this->port = $port;
+        return $this;
     }
 
     /**
@@ -315,13 +319,15 @@ class Url implements UrlInterface, \IteratorAggregate
     }
 
     /**
-	 * Sets the user name.
-	 *
+     * Sets the user name.
+     *
      * @param string|null $user
+     * @return Url
      */
-    public function setUser(?string $user):void
+    public function setUser(?string $user):self
     {
         $this->user = $user;
+        return $this;
     }
 
     /**
@@ -334,13 +340,15 @@ class Url implements UrlInterface, \IteratorAggregate
     }
 
     /**
-	 * Sets the user password.
-	 *
+     * Sets the user password.
+     *
      * @param string|null $password
+     * @return Url
      */
-    public function setPassword(?string $password):void
+    public function setPassword(?string $password):self
     {
         $this->password = $password;
+        return $this;
     }
 
     /**
@@ -353,13 +361,15 @@ class Url implements UrlInterface, \IteratorAggregate
     }
 
     /**
-	 * Sets the path.
-	 *
+     * Sets the path.
+     *
      * @param string|null $path
+     * @return Url
      */
-    public function setPath(?string $path):void
+    public function setPath(?string $path):self
     {
         $this->path = $path;
+        return $this;
     }
 
     /**
@@ -370,14 +380,17 @@ class Url implements UrlInterface, \IteratorAggregate
     {
         return $this->path;
     }
+
     /**
-	 * Sets the URL fragment.
-	 *
+     * Sets the URL fragment.
+     *
      * @param string|null $fragment
+     * @return Url
      */
-    public function setFragment(?string $fragment):void
+    public function setFragment(?string $fragment):self
     {
         $this->fragment = $fragment;
+        return $this;
     }
 
     /**
@@ -390,50 +403,70 @@ class Url implements UrlInterface, \IteratorAggregate
     }
 
     /**
-	 * Sets the query parameters from a string (parsed using parse_str()).
-	 *
-	 * @uses parse_str()
-	 * @param string $queryString
-	 */
-	public function setQueryString(string $queryString):void
+     * Sets the query parameters from a string (parsed using parse_str()).
+     *
+     * @uses parse_str()
+     * @param string $queryString
+     * @return Url
+     */
+	public function setQueryString(string $queryString):self
 	{
 		parse_str($queryString, $this->query);
+		return $this;
 	}
 
     /**
-	 * Replaces all the parameters with new ones.
-	 *
-	 * @param array $parameters
-	 */
-	public function setQueryParameters(array $parameters):void
+     * Replaces all the parameters with new ones.
+     *
+     * @param array $parameters
+     * @return Url
+     */
+	public function setQueryParameters(array $parameters):self
 	{
 		$this->query = [];
 		$this->addQueryParameters($parameters);
+		return $this;
 	}
 
     /**
-	 * Add extra query parameters. Previously defined parameters are kept expect for duplicates which are replaced
-	 * with the new parameters values.
-	 *
-	 * @param array $parameters
-	 */
-	public function addQueryParameters(array $parameters):void
+     * Add extra query parameters. Previously defined parameters are kept expect for duplicates which are replaced
+     * with the new parameters values.
+     *
+     * @param array $parameters
+     * @return Url
+     */
+	public function addQueryParameters(array $parameters):self
 	{
 		foreach ($parameters as $paramName => $value) {
 			$this->setQueryParameter((string)$paramName, $value !== null ? (string)$value : null);
 		}
+		return $this;
 	}
 
     /**
-	 * Sets a query parameter.
-	 *
-	 * @param string $paramName
-	 * @param string|null $value
-	 */
-	public function setQueryParameter(string $paramName, string $value = null):void
+     * Sets a query parameter.
+     *
+     * @param string $paramName
+     * @param string|null $value
+     * @return Url
+     */
+	public function setQueryParameter(string $paramName, string $value = null):self
 	{
 		$this->query[$paramName] = $value;
+		return $this;
 	}
+
+    /**
+     * Removes a query parameter.
+     *
+     * @param string $paramName
+     * @return Url
+     */
+    public function removeQueryParameter(string $paramName):self
+    {
+        unset($this->query[$paramName]);
+        return $this;
+    }
 
     /**
      * @inheritdoc
@@ -443,16 +476,6 @@ class Url implements UrlInterface, \IteratorAggregate
     {
         return $this->query[$paramName] ?? null;
     }
-
-    /**
-	 * Removes a query parameter.
-	 *
-	 * @param string $paramName
-	 */
-	public function removeQueryParameter(string $paramName):void
-	{
-		unset($this->query[$paramName]);
-	}
 
     /**
      * @inheritdoc
@@ -493,19 +516,24 @@ class Url implements UrlInterface, \IteratorAggregate
 
     /**
      * @inheritdoc
-     * @see UrlInterface::buildUrl()
+     * @param bool $includeHost
+     * @param bool $includeUser
+     * @param bool $includePort
+     * @param bool $includeQuery
+     * @param bool $includeFragment
+     * @return string
      */
-    public function buildUrl(?bool $includeHost = null, ?bool $includeUser = null, ?bool $includePort = null,
-        ?bool $includeQuery = null, ?bool $includeFragment = null):string
+    public function buildUrl(bool $includeHost = true, bool $includeUser = true, bool $includePort = true,
+        bool $includeQuery = true, bool $includeFragment = true):string
     {
         $url = "";
 
-        if ($includeHost !== false && $this->host) {
+        if ($includeHost && $this->host) {
             $scheme = $this->scheme ?? self::DEFAULT_SCHEME;
             $url .= "$scheme://";
 
             // user + pass
-            if ($includeUser !== false && $this->user) {
+            if ($includeUser && $this->user) {
                 $url .= urlencode($this->user);
                 if ($this->password) {
                     $url .= ":".urlencode($this->password);
@@ -517,7 +545,7 @@ class Url implements UrlInterface, \IteratorAggregate
             $url .= $this->host;
 
             // port
-            if ($includePort !== false && $this->port
+            if ($includePort && $this->port
                 && (!isset(self::PORTS_NUMBERS[$scheme]) || $this->port != self::PORTS_NUMBERS[$scheme]))
             {
                 $url .= ":$this->port";
@@ -529,12 +557,12 @@ class Url implements UrlInterface, \IteratorAggregate
         $url .= $this->path ?: "/";
 
         // query
-        if ($includeQuery !== false && $this->query) {
+        if ($includeQuery && $this->query) {
             $url .= "?{$this->getQueryString()}";
         }
 
         // fragment
-        if ($includeFragment !== false && $this->fragment) {
+        if ($includeFragment && $this->fragment) {
             $url .= "#".urlencode($this->fragment);
         }
 

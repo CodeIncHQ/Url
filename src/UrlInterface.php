@@ -115,15 +115,15 @@ interface UrlInterface extends \ArrayAccess, \Traversable
 	/**
 	 * Builds a custom URL.
 	 *
-	 * @param bool|null $includeHost Includes the hostname (default: true)
-	 * @param bool|null $includeUser Includes the user and password (defaut: true)
-	 * @param bool|null $includePort Includes the port number (default: true)
-	 * @param bool|null $includeQuery Incldues the query string (default: true)
-	 * @param bool|null $includeFragment Includes the fragment (default: true)
+	 * @param bool $includeHost Includes the hostname (default: true)
+	 * @param bool $includeUser Includes the user and password (defaut: true)
+	 * @param bool $includePort Includes the port number (default: true)
+	 * @param bool $includeQuery Incldues the query string (default: true)
+	 * @param bool $includeFragment Includes the fragment (default: true)
 	 * @return string
 	 */
-	public function buildUrl(?bool $includeHost = null, ?bool $includeUser = null, ?bool $includePort = null,
-		?bool $includeQuery = null, ?bool $includeFragment = null):string;
+	public function buildUrl(bool $includeHost = true, bool $includeUser = true, bool $includePort = true,
+        bool $includeQuery = true, bool $includeFragment = true):string;
 
 	/**
 	 * Returns the URL. Alias of getUrl()
