@@ -24,13 +24,16 @@ namespace CodeInc\Url\Tests;
 use CodeInc\Url\Url;
 use PHPUnit\Framework\TestCase;
 
+
 /**
  * Class UrlTest
  *
+ * @uses Url
  * @package Tests\CodeInc\Url
  * @author Joan Fabrégat <joan@codeinc.fr>
  */
-class UrlTest extends TestCase {
+class UrlTest extends TestCase
+{
 	// test params
 	private const TEST_SCHEME = "https";
 	private const TEST_USER = "user";
@@ -38,18 +41,19 @@ class UrlTest extends TestCase {
 	private const TEST_HOST = "www.example.com";
 	private const TEST_PORT = 8080;
 	private const TEST_PATH = "/a/great_path";
-	private const TEST_QUERY = "p1=val1&p2&p3=1";
+	private const TEST_QUERY = "p1=val1&p2&p3=1&p4=0";
 	private const TEST_FRAGMENT = "fragment";
 
 	// test URL
 	private const TEST_URL = self::TEST_SCHEME."://".self::TEST_USER.":".self::TEST_PASSWORD."@".self::TEST_HOST
 		.":".self::TEST_PORT.self::TEST_PATH."?".self::TEST_QUERY."#".self::TEST_FRAGMENT;
 
-	/**
-	 * Tests the URL builder.
-	 */
-	public function testUrlBuilder():void {
-		$url = (new Url())
+    /**
+     * Tests the URL builder.
+     */
+    public function testUrlBuilder():void
+    {
+        $url = (new Url())
             ->withScheme(self::TEST_SCHEME)
             ->withUserInfo(self::TEST_USER, self::TEST_PASSWORD)
             ->withHost(self::TEST_HOST)
@@ -57,13 +61,25 @@ class UrlTest extends TestCase {
             ->withPath(self::TEST_PATH)
             ->withQuery(self::TEST_QUERY)
             ->withFragment(self::TEST_FRAGMENT);
-		$this->assertSame(self::TEST_URL, (string)$url);
-	}
+        $this->assertSame(self::TEST_URL, (string)$url);
+    }
+
+    /**
+     * Tests the URL query.
+     */
+    public function testUrlQuery():void
+    {
+        $url = Url::fromString(self::TEST_URL)
+            ->withQuery(['p4' => 0])
+            ->withQuery(['p2' => null]);
+        $this->assertSame(self::TEST_URL, (string)$url);
+    }
 
 	/**
 	 * Tests the URL parser.
 	 */
-	public function testUrlParser():void {
+	public function testUrlParser():void
+    {
 		$url = Url::fromString(self::TEST_URL);
 		$this->assertSame(self::TEST_SCHEME, $url->getScheme());
 		$this->assertSame(self::TEST_USER, $url->getUser());
