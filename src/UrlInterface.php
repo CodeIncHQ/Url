@@ -94,8 +94,7 @@ interface UrlInterface extends UriInterface
     public function withoutPort():self;
 
 	/**
-	 * Returns the user name or null if not set.
-	 *
+     * @inheritdoc
 	 * @return null|string
 	 */
 	public function getUserInfo():?string;
