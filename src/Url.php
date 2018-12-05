@@ -636,12 +636,30 @@ class Url implements UrlInterface
 
     /**
      * @inheritdoc
+     * @return string
+     */
+    public function getFullUrl():string
+    {
+        return $this->buildUrl();
+    }
+
+    /**
+     * @inheritdoc
+     * @return string
+     */
+    public function getRelUrl():string
+    {
+        return $this->buildUrl(false, false, false);
+    }
+
+    /**
+     * @inheritdoc
      * @see UrlInterface::__toString()
      */
     public function __toString():string
     {
         try {
-            return $this->buildUrl();
+            return $this->getFullUrl();
         } catch (\Throwable $exception) {
             return sprintf("Error [%s]: %s", get_class($exception), $exception->getMessage());
         }

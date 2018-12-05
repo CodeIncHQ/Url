@@ -45,8 +45,9 @@ class UrlTest extends TestCase
 	private const TEST_FRAGMENT = "fragment";
 
 	// test URL
-	private const TEST_URL = self::TEST_SCHEME."://".self::TEST_USER.":".self::TEST_PASSWORD."@".self::TEST_HOST
-		.":".self::TEST_PORT.self::TEST_PATH."?".self::TEST_QUERY."#".self::TEST_FRAGMENT;
+    private const TEST_FULL_URL = self::TEST_SCHEME."://".self::TEST_USER.":".self::TEST_PASSWORD."@".self::TEST_HOST
+    .":".self::TEST_PORT.self::TEST_PATH."?".self::TEST_QUERY."#".self::TEST_FRAGMENT;
+    private const TEST_REL_URL = self::TEST_PATH."?".self::TEST_QUERY."#".self::TEST_FRAGMENT;
 
     /**
      * Tests the URL builder.
@@ -61,7 +62,8 @@ class UrlTest extends TestCase
             ->withPath(self::TEST_PATH)
             ->withQuery(self::TEST_QUERY)
             ->withFragment(self::TEST_FRAGMENT);
-        $this->assertSame(self::TEST_URL, (string)$url);
+        $this->assertSame(self::TEST_FULL_URL, $url->getFullUrl());
+        $this->assertSame(self::TEST_REL_URL, $url->getRelUrl());
     }
 
     /**
@@ -69,10 +71,11 @@ class UrlTest extends TestCase
      */
     public function testUrlQuery():void
     {
-        $url = Url::fromString(self::TEST_URL)
+        $url = Url::fromString(self::TEST_FULL_URL)
             ->withQuery(['p4' => 0])
             ->withQuery(['p2' => null]);
-        $this->assertSame(self::TEST_URL, (string)$url);
+        $this->assertSame(self::TEST_FULL_URL, $url->getFullUrl());
+        $this->assertSame(self::TEST_REL_URL, $url->getRelUrl());
     }
 
 	/**
@@ -80,7 +83,7 @@ class UrlTest extends TestCase
 	 */
 	public function testUrlParser():void
     {
-		$url = Url::fromString(self::TEST_URL);
+		$url = Url::fromString(self::TEST_FULL_URL);
 		$this->assertSame(self::TEST_SCHEME, $url->getScheme());
 		$this->assertSame(self::TEST_USER, $url->getUser());
 		$this->assertSame(self::TEST_PASSWORD, $url->getPassword());

@@ -213,4 +213,20 @@ interface UrlInterface extends UriInterface
 	 */
 	public function buildUrl(bool $withHost = true, bool $withUser = true, bool $withPort = true,
         bool $withQuery = true, bool $withFragment = true):string;
+
+    /**
+     * Returns the full URL.
+     *
+     * @uses UrlInterface::buildUrl()
+     * @return string
+     */
+    public function getFullUrl():string;
+
+    /**
+     * Returns the relative URL.
+     *
+     * @uses UrlInterface::buildUrl()
+     * @return string
+     */
+    public function getRelUrl():string;
 }
