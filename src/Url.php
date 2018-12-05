@@ -493,7 +493,7 @@ class Url implements UrlInterface
                 $queryString .= $paramsSeparator;
             }
             $queryString .= urlencode($param);
-            if ($value !== '' || $value !== null) {
+            if (!empty($value) || (string)$value === '0') {
                 $queryString .= "=".urlencode($value);
             }
         }
@@ -522,7 +522,7 @@ class Url implements UrlInterface
             }
             elseif (is_iterable($query)) {
                 foreach ($query as $param => $value) {
-                    $this->query[(string)$param] = $value;
+                    $this->query[(string)$param] = (string)$value;
                 }
             }
         }
