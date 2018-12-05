@@ -74,9 +74,9 @@ class Url implements UrlInterface
     /**
      * URL query parameters.
      *
-     * @var Parameters
+     * @var array
      */
-    protected $queryParameters;
+    protected $query = [];
 
     /**
      * URL fragment
@@ -84,14 +84,6 @@ class Url implements UrlInterface
      * @var string|null
      */
     protected $fragment;
-
-    /**
-     * Url constructor.
-     */
-    public function __construct()
-    {
-        $this->setQueryParameters(new Parameters());
-    }
 
     /**
      * Sets the URL.
@@ -122,7 +114,7 @@ class Url implements UrlInterface
                 $url->setFragment($parsedUrl['fragment']);
             }
             if (isset($parsedUrl['query']) && $parsedUrl['query']) {
-                $url->setQueryParameters(Parameters::fromQueryString($parsedUrl['query']));
+                $url->setQuery($parsedUrl['query']);
             }
         }
         return $url;
@@ -161,7 +153,7 @@ class Url implements UrlInterface
             $url->setUserInfo($_SERVER["PHP_AUTH_USER"], $_SERVER["PHP_AUTH_PW"] ?? null);
         }
         if (isset($_SERVER["REQUEST_URI"]) && ($pos = strpos($_SERVER["REQUEST_URI"], "?")) !== false) {
-            $url->setQueryParameters(Parameters::fromQueryString(substr($_SERVER["REQUEST_URI"], $pos + 1)));
+            $url->setQuery(substr($_SERVER["REQUEST_URI"], $pos + 1));
         }
         return $url;
     }
@@ -189,7 +181,7 @@ class Url implements UrlInterface
             $url->setUserInfo($userInfo);
         }
         if ($query = $uri->getQuery()) {
-            $url->setQueryParameters(Parameters::fromQueryString($uri->getQuery()));
+            $url->setQuery($uri->getQuery());
         }
         return $url;
     }
@@ -201,7 +193,7 @@ class Url implements UrlInterface
     public static function fromPsr7Request(ServerRequestInterface $request):self
     {
         $url = static::fromPsr7Uri($request->getUri());
-        $url->setQueryParameters(Parameters::fromIterable($request->getQueryParams()));
+        $url->setQuery($request->getQueryParams());
         return $url;
     }
 
@@ -466,54 +458,64 @@ class Url implements UrlInterface
 
     /**
      * @inheritdoc
-     * @param string $query
+     * @param string $paramsSeparator
+     * @return string
+     */
+    public function getQuery(string $paramsSeparator = '&'):string
+    {
+        $queryString = '';
+        foreach ($this->query as $param => $value) {
+            if (!empty($queryString)) {
+                $queryString .= $paramsSeparator;
+            }
+            $queryString .= urlencode($param);
+            if ($value !== '' || $value !== null) {
+                $queryString .= "=".urlencode($value);
+            }
+        }
+        return $queryString;
+    }
+
+    /**
+     * @inheritdoc
+     * @return array
+     */
+    public function getQueryAsArray():array
+    {
+        return $this->query;
+    }
+
+    /**
+     * Sets the query string
+     *
+     * @param string|iterable|null $query
+     */
+    protected function setQuery($query):void
+    {
+        if (!empty($query)) {
+            if (is_string($query)) {
+                parse_str($query, $this->query);
+            }
+            elseif (is_iterable($query)) {
+                foreach ($query as $param => $value) {
+                    $this->query[(string)$param] = $value;
+                }
+            }
+        }
+        else {
+            $this->query = [];
+        }
+    }
+
+    /**
+     * @inheritdoc
+     * @param string|iterable|null $query
      * @return static
      */
     public function withQuery($query):UrlInterface
     {
         $url = clone $this;
-        $url->setQueryParameters(Parameters::fromQueryString((string)$query));
-        return $url;
-    }
-
-    /**
-     * @inheritdoc
-     * @param string $paramSeparator
-     * @return string
-     */
-    public function getQuery(string $paramSeparator = '&'):string
-    {
-        return $this->getQueryParameters()->getParamsAsString();
-    }
-
-    /**
-     * @inheritdoc
-     * @return ParametersInterface
-     */
-    public function getQueryParameters():ParametersInterface
-    {
-        return $this->queryParameters;
-    }
-
-    /**
-     * Sets the query parameters object.
-     *
-     * @param ParametersInterface $parameters
-     */
-    protected function setQueryParameters(ParametersInterface $parameters):void
-    {
-        $this->queryParameters = $parameters;
-    }
-
-    /**
-     * @inheritdoc
-     * @param ParametersInterface $parameters
-     * @return static
-     */
-    public function withQueryParameters(ParametersInterface $parameters):UrlInterface
-    {
-        $url = clone $this;
-        $url->setQueryParameters($parameters);
+        $url->setQuery($query);
         return $url;
     }
 
@@ -521,10 +523,10 @@ class Url implements UrlInterface
      * @inheritdoc
      * @return static
      */
-    public function withoutQueryParameters():UrlInterface
+    public function withoutQuery():UrlInterface
     {
         $url = clone $this;
-        $url->setQueryParameters(new Parameters());
+        $url->setQuery(null);
         return $url;
     }
 
@@ -554,11 +556,11 @@ class Url implements UrlInterface
      * @param bool $withPort
      * @param bool $withQuery
      * @param bool $withFragment
-     * @param string $queryParametersSeparator
+     * @param string $queryParamsSeparator
      * @return string
      */
     public function buildUrl(bool $withHost = true, bool $withUserInfo = true, bool $withPort = true,
-        bool $withQuery = true, bool $withFragment = true, string $queryParametersSeparator = '&'):string
+        bool $withQuery = true, bool $withFragment = true, string $queryParamsSeparator = '&'):string
     {
         $url = "";
 
@@ -586,8 +588,8 @@ class Url implements UrlInterface
         $url .= $this->path ?: "/";
 
         // query
-        if ($withQuery && $this->queryParameters) {
-            $url .= "?{$this->getQuery($queryParametersSeparator)}";
+        if ($withQuery && $this->query) {
+            $url .= "?{$this->getQuery($queryParamsSeparator)}";
         }
 
         // fragment
