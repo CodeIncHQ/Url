@@ -7,33 +7,22 @@ A PHP 7 library to manipulates URLs. This library is compatible with [PSR-7](htt
 ```php
 <?php
 use CodeInc\Url\Url;
-use CodeInc\Url\ImmutableUrl;
-use CodeInc\Url\UrlGlobals;
 
 // parsing a URL
-$url = new Url("https://www.google.com/?q=A+great+search");
-if ($url->hasQueryParameter("p")) {
-	echo $url->getQueryParameter("p");
+$url = Url::fromString("https://www.google.com/?q=A+great+search");
+if (isset($url->getQueryAsArray()["p"])) {
+	echo $url->getQueryAsArray()["p"];
 }
 
 // building a URL
-$url = new Url();
-$url->setHost("www.google.com");
-$url->setScheme("https");
-$url->setQueryParameter("q", "A great search");
-echo $url->getUrl();
+$url = (new Url())
+    ->withHost("www.google.com")
+    ->withoutScheme("https")
+    ->withQuery(["q", "A great search"]);
+echo $url;
 
 // getting the current URL
 $currentUrl = Url::fromGlobals();
-
-// getting a immuable URL
-$immuableUrl = new ImmutableUrl("https://www.google.com/?q=A+great+search");
-$newImmuableUrl = $immuableUrl->withHost("www.google.fr");
-
-// getting infos about the current URL
-echo UrlGlobals::getCurrentHost().":".UrlGlobals::getCurrentPort();
-```
-
 
 ## Tests
 

@@ -94,11 +94,24 @@ interface UrlInterface extends UriInterface
     public function withoutPort():self;
 
 	/**
-	 * Returns the user name or null if not set.
-	 *
+     * @inheritdoc
 	 * @return null|string
 	 */
 	public function getUserInfo():?string;
+
+    /**
+     * Returns the user name or NULL if not set.
+     *
+     * @return string|null
+     */
+    public function getUser():?string;
+
+    /**
+     * Returns the user password or NULL if not set.
+     *
+     * @return string|null
+     */
+    public function getPassword():?string;
 
     /**
      * @inheritdoc
@@ -119,7 +132,6 @@ interface UrlInterface extends UriInterface
 	 * @return null|string
 	 */
 	public function getPath():?string;
-
 
     /**
      * @inheritdoc
