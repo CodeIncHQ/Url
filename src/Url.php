@@ -607,7 +607,7 @@ class Url implements UrlInterface
     public function __toString():string
     {
         try {
-            return $this->getUrl();
+            return $this->buildUrl();
         } catch (\Throwable $exception) {
             return sprintf("Error [%s]: %s", get_class($exception), $exception->getMessage());
         }
