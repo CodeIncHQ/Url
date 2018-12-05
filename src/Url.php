@@ -3,7 +3,7 @@
 // +---------------------------------------------------------------------+
 // | CODE INC. SOURCE CODE - CONFIDENTIAL                                |
 // +---------------------------------------------------------------------+
-// | Copyright (c) 2017 - Code Inc. SAS - All Rights Reserved.           |
+// | Copyright (c) 2018 - Code Inc. SAS - All Rights Reserved.           |
 // | Visit https://www.codeinc.fr for more information about licensing.  |
 // +---------------------------------------------------------------------+
 // | NOTICE:  All information contained herein is, and remains the       |
@@ -21,6 +21,8 @@
 //
 declare(strict_types=1);
 namespace CodeInc\Url;
+use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Message\UriInterface;
 
 
 /**
@@ -29,196 +31,583 @@ namespace CodeInc\Url;
  * @package CodeInc\Url
  * @author Joan Fabrégat <joan@codeinc.fr>
  */
-class Url extends AbstractUrl {
-	/**
-	 * Sets the URL scheme.
-	 *
-	 * @see Url::SCHEME_HTTPS
-	 * @see Url::SCHEME_HTTP
-	 * @param string $scheme
-	 */
-	public function setScheme(string $scheme):void
-	{
-		$this->scheme = strtolower($scheme);
-	}
+class Url implements UrlInterface
+{
+    /**
+     * URL scheme.
+     *
+     * @see Url::SCHEME_HTTP
+     * @see Url::SCHEME_HTTPS
+     * @see Url::DEFAULT_SCHEME
+     * @var string|null
+     */
+    protected $scheme;
 
-	/**
-	 * Removes the scheme from the URL.
-	 */
-	public function removeScheme():void
-	{
-		$this->scheme = null;
-	}
+    /**
+     * URL host name or IP address.
+     *
+     * @var string|null
+     */
+    protected $host;
 
-	/**
-	 * Sets the host name or IP address.
-	 *
-	 * @param string $host
-	 */
-	public function setHost(string $host):void
-	{
-		$this->host = $host;
-	}
+    /**
+     * URL port.
+     *
+     * @var int|null
+     */
+    protected $port;
 
-	/**
-	 * Removes the host from the URL.
-	 */
-	public function removeHost():void
-	{
-		$this->host = null;
-	}
+    /**
+     * URL user and password separated by ':'.
+     *
+     * @var string|null
+     */
+    protected $userInfo;
 
-	/**
-	 * Sets the host port number.
-	 *
-	 * @param int $port
-	 */
-	public function setPort(int $port):void
-	{
-		$this->port = $port;
-	}
+    /**
+     * URL path.
+     *
+     * @var string|null
+     */
+    protected $path;
 
-	/**
-	 * Removes the port from the URL.
-	 */
-	public function removePort():void
-	{
-		$this->port = null;
-	}
-	
-	/**
-	 * Sets the user name.
-	 *
-	 * @param string $user
-	 */
-	public function setUser(string $user):void
-	{
-		$this->user = $user;
-	}
+    /**
+     * URL query parameters.
+     *
+     * @var Parameters
+     */
+    protected $queryParameters;
 
-	/**
-	 * Removes the user from the URL.
-	 */
-	public function removeUser():void
-	{
-		$this->user = null;
-	}
+    /**
+     * URL fragment
+     *
+     * @var string|null
+     */
+    protected $fragment;
 
-	/**
-	 * Sets the user password.
-	 *
-	 * @param string $password
-	 */
-	public function setPassword(string $password):void
-	{
-		$this->password = $password;
-	}
+    /**
+     * Url constructor.
+     */
+    public function __construct()
+    {
+        $this->setQueryParameters(new Parameters());
+    }
 
-	/**
-	 * Removes the password from the URL.
-	 */
-	public function removePassword():void
-	{
-		$this->password = null;
-	}
+    /**
+     * Sets the URL.
+     *
+     * @param string $string
+     * @return static
+     */
+    public static function fromString(string $string):self
+    {
+        $url = new static;
+        if ($parsedUrl = parse_url($string)) {
+            if (isset($parsedUrl['scheme'])) {
+                $url->setScheme($parsedUrl['scheme']);
+            }
+            if (isset($parsedUrl['host'])) {
+                $url->setHost($parsedUrl['host']);
+            }
+            if (isset($parsedUrl['port'])) {
+                $url->setPort($parsedUrl['port']);
+            }
+            if (isset($parsedUrl['user'])) {
+                $url->setUserInfo($parsedUrl['user'], $parsedUrl['pass'] ?? null);
+            }
+            if (isset($parsedUrl['path'])) {
+                $url->setPath($parsedUrl['path']);
+            }
+            if (isset($parsedUrl['fragment'])) {
+                $url->setFragment($parsedUrl['fragment']);
+            }
+            if (isset($parsedUrl['query']) && $parsedUrl['query']) {
+                $url->setQueryParameters(Parameters::fromQueryString($parsedUrl['query']));
+            }
+        }
+        return $url;
+    }
 
-	/**
-	 * Sets the path.
-	 *
-	 * @param string $path
-	 */
-	public function setPath(string $path):void
-	{
-		$this->path = $path;
-	}
+    /**
+     * @param bool $scheme
+     * @return static
+     */
+    public static function fromGlobals(bool $scheme = true)
+    {
+        $url = new static();
+        if ($scheme) {
+            $url->setScheme(@$_SERVER["HTTPS"] == "on" ? "https" : "http");
+        }
+        if (isset($_SERVER["HTTP_HOST"])) {
+            if (($pos = strpos($_SERVER["HTTP_HOST"], ":")) !== false) {
+                $url->setHost(substr($_SERVER["HTTP_HOST"], 0, $pos));
+            }
+            else {
+                $url->setHost($_SERVER["HTTP_HOST"]);
+            }
+        }
+        if (isset($_SERVER["HTTP_HOST"]) && ($pos = strpos($_SERVER["HTTP_HOST"], ":")) !== false) {
+            $url->setPort(substr($_SERVER["HTTP_HOST"], $pos + 1));
+        }
+        if (isset($_SERVER["REQUEST_URI"])) {
+            if (($pos = strpos($_SERVER["REQUEST_URI"], "?")) !== false) {
+                $url->setPath(substr($_SERVER["REQUEST_URI"], 0, $pos));
+            }
+            else {
+                $url->setPath($_SERVER["REQUEST_URI"]);
+            }
+        }
+        if (isset($_SERVER["PHP_AUTH_USER"])) {
+            $url->setUserInfo($_SERVER["PHP_AUTH_USER"], $_SERVER["PHP_AUTH_PW"] ?? null);
+        }
+        if (isset($_SERVER["REQUEST_URI"]) && ($pos = strpos($_SERVER["REQUEST_URI"], "?")) !== false) {
+            $url->setQueryParameters(Parameters::fromQueryString(substr($_SERVER["REQUEST_URI"], $pos + 1)));
+        }
+        return $url;
+    }
 
-	/**
-	 * Removes the path from the URL.
-	 */
-	public function removePath():void
-	{
-		$this->path = null;
-	}
+    /**
+     * @param UriInterface $uri
+     * @return static
+     */
+    public static function fromPsr7Uri(UriInterface $uri):self
+    {
+        $url = new static();
+        if ($scheme = $uri->getScheme()) {
+            $url->setScheme($scheme);
+        }
+        if ($host = $uri->getHost()) {
+            $url->setHost($host);
+        }
+        if ($port = $uri->getPort()) {
+            $url->setPort($port);
+        }
+        if ($path = $uri->getPath()) {
+            $url->setPath($path);
+        }
+        if ($userInfo = $uri->getUserInfo()) {
+            $url->setUserInfo($userInfo);
+        }
+        if ($query = $uri->getQuery()) {
+            $url->setQueryParameters(Parameters::fromQueryString($uri->getQuery()));
+        }
+        return $url;
+    }
 
-	/**
-	 * Sets the URL fragment.
-	 *
-	 * @param string $fragment
-	 */
-	public function setFragment(string $fragment):void
-	{
-		$this->fragment = $fragment;
-	}
+    /**
+     * @param ServerRequestInterface $request
+     * @return static
+     */
+    public static function fromPsr7Request(ServerRequestInterface $request):self
+    {
+        $url = static::fromPsr7Uri($request->getUri());
+        $url->setQueryParameters(Parameters::fromIterable($request->getQueryParams()));
+        return $url;
+    }
 
-	/**
-	 * Removes the fragment from the URL.
-	 */
-	public function removeFragment():void
-	{
-		$this->fragment = null;
-	}
 
-	/**
-	 * Sets the query parameters from a string (parsed using parse_str()).
-	 *
-	 * @see parse_str()
-	 * @param string $queryString
-	 */
-	public function setQueryString(string $queryString):void
-	{
-		parse_str($queryString, $this->query);
-	}
+    /**
+     * @inheritdoc
+     * @return string|null
+     */
+    public function getScheme():?string
+    {
+        return $this->scheme;
+    }
 
-	/**
-	 * Replaces all the parameters with new ones.
-	 *
-	 * @param array $parameters
-	 */
-	public function setQuery(array $parameters):void
-	{
-		$this->removeQuery();
-		$this->addQueryParameters($parameters);
-	}
+    /**
+     * Sets the URL scheme ('http', 'https', etc.).
+     *
+     * @param string|null $scheme
+     */
+    protected function setScheme($scheme):void
+    {
+        $this->scheme = $scheme ? strtolower((string)$scheme) : null;
+    }
 
-	/**
-	 * Removes all query parameters.
-	 */
-	public function removeQuery():void
-	{
-		$this->query = [];
-	}
+    /**
+     * @inheritdoc
+     * @param string $scheme
+     * @return static
+     */
+    public function withScheme($scheme):UrlInterface
+    {
+        $url = clone $this;
+        $url->setScheme($scheme);
+        return $url;
+    }
 
-	/**
-	 * Add extra query parameters. Previously defined parameters are kept expect for duplicates which are replaced
-	 * with the new parameters values.
-	 *
-	 * @param array $parameters
-	 */
-	public function addQueryParameters(array $parameters):void
-	{
-		foreach ($parameters as $paramName => $value) {
-			$this->setQueryParameter((string)$paramName, $value !== null ? (string)$value : null);
-		}
-	}
+    /**
+     * @inheritdoc
+     * @return static
+     */
+    public function withoutScheme():UrlInterface
+    {
+        $url = clone $this;
+        $url->setScheme(null);
+        return $url;
+    }
 
-	/**
-	 * Sets a query parameter.
-	 *
-	 * @param string $paramName
-	 * @param string|null $value
-	 */
-	public function setQueryParameter(string $paramName, string $value = null):void
-	{
-		$this->query[$paramName] = $value;
-	}
+    /**
+     * @inheritdoc
+     * @return string|null
+     */
+    public function getHost():?string
+    {
+        return $this->host;
+    }
 
-	/**
-	 * Removes a query parameter.
-	 *
-	 * @param string $paramName
-	 */
-	public function removeQueryParameter(string $paramName):void
-	{
-		unset($this->query[$paramName]);
-	}
+    /**
+     * Sets the host name or IP address.
+     *
+     * @param string|null $host
+     */
+    protected function setHost($host):void
+    {
+        $this->host = $host ? (string)$host : null;
+    }
+
+    /**
+     * @inheritdoc
+     * @param string|null $host
+     * @return static
+     */
+    public function withHost($host):UrlInterface
+    {
+        $url = clone $this;
+        $url->setHost($host);
+        return $url;
+    }
+
+    /**
+     * @inheritdoc
+     * @return static
+     */
+    public function withoutHost():UrlInterface
+    {
+        $url = clone $this;
+        $url->setHost(null);
+        return $url;
+    }
+
+    /**
+     * @inheritdoc
+     * @return int|null
+     */
+    public function getPort():?int
+    {
+        return $this->port;
+    }
+
+    /**
+     * Sets the host port number.
+     *
+     * @param int|null $port
+     */
+    protected function setPort($port):void
+    {
+        $this->port = $port ? (int)$port : null;
+    }
+
+    /**
+     * @inheritdoc
+     * @param int|null $port
+     * @return static
+     */
+    public function withPort($port):UrlInterface
+    {
+        $url = clone $this;
+        $url->setPort($port);
+        return $url;
+    }
+
+    /**
+     * @inheritdoc
+     * @return static
+     */
+    public function withoutPort():UrlInterface
+    {
+        $url = clone $this;
+        $url->setPort(null);
+        return $url;
+    }
+
+    /**
+     * @inheritdoc
+     * @return string|null
+     */
+    public function getUserInfo():?string
+    {
+        return $this->userInfo;
+    }
+
+    /**
+     * Sets the user and password.
+     *
+     * @param string|null $user
+     * @param string|null $password
+     */
+    protected function setUserInfo($user, $password = null):void
+    {
+        if ($user) {
+            $this->userInfo = (string)$user;
+            if ($password) {
+                $this->userInfo .= ':'.(string)$password;
+            }
+        }
+    }
+
+    /**
+     * @inheritdoc
+     * @param string|null $user
+     * @param string|null $password
+     * @return static
+     */
+    public function withUserInfo($user, $password = null):UrlInterface
+    {
+        $url = clone $this;
+        $url->setUserInfo($user, $password);
+        return $url;
+    }
+
+    /**
+     * @inheritdoc
+     * @return static
+     */
+    public function withoutUserInfo():UrlInterface
+    {
+        $url = clone $this;
+        $url->setUserInfo(null);
+        return $url;
+    }
+
+    /**
+     * @return string|null
+     */
+    public function getPath():?string
+    {
+        return $this->path;
+    }
+
+    /**
+     * Sets the path.
+     *
+     * @param string|null $path
+     */
+    protected function setPath($path):void
+    {
+        $this->path = $path ? (string)$path : null;
+    }
+
+    /**
+     * @inheritdoc
+     * @param string|null $path
+     * @return static
+     */
+    public function withPath($path):UrlInterface
+    {
+        $url = clone $this;
+        $url->setPath($path);
+        return $url;
+    }
+
+    /**
+     * @inheritdoc
+     * @return static
+     */
+    public function withoutPath():UrlInterface
+    {
+        $url = clone $this;
+        $url->setPath(null);
+        return $url;
+    }
+
+    /**
+     * @inheritdoc
+     * @return string|null
+     */
+    public function getFragment():?string
+    {
+        return $this->fragment;
+    }
+
+    /**
+     * Sets the URL fragment.
+     *
+     * @param string|null $fragment
+     */
+    protected function setFragment(?string $fragment):void
+    {
+        $this->fragment = $fragment;
+    }
+
+    /**
+     * @inheritdoc
+     * @param string $fragment
+     * @return static
+     */
+    public function withFragment($fragment):UrlInterface
+    {
+        $url = clone $this;
+        $url->setFragment($fragment);
+        return $url;
+    }
+
+    /**
+     * @inheritdoc
+     * @return static
+     */
+    public function withoutFragment():UrlInterface
+    {
+        $url = clone $this;
+        $url->setFragment(null);
+        return $url;
+    }
+
+    /**
+     * @inheritdoc
+     * @param string $query
+     * @return static
+     */
+    public function withQuery($query):UrlInterface
+    {
+        $url = clone $this;
+        $url->setQueryParameters(Parameters::fromQueryString((string)$query));
+        return $url;
+    }
+
+    /**
+     * @inheritdoc
+     * @param string $paramSeparator
+     * @return string
+     */
+    public function getQuery(string $paramSeparator = '&'):string
+    {
+        return $this->getQueryParameters()->getParamsAsString();
+    }
+
+    /**
+     * @inheritdoc
+     * @return ParametersInterface
+     */
+    public function getQueryParameters():ParametersInterface
+    {
+        return $this->queryParameters;
+    }
+
+    /**
+     * Sets the query parameters object.
+     *
+     * @param ParametersInterface $parameters
+     */
+    protected function setQueryParameters(ParametersInterface $parameters):void
+    {
+        $this->queryParameters = $parameters;
+    }
+
+    /**
+     * @inheritdoc
+     * @param ParametersInterface $parameters
+     * @return static
+     */
+    public function withQueryParameters(ParametersInterface $parameters):UrlInterface
+    {
+        $url = clone $this;
+        $url->setQueryParameters($parameters);
+        return $url;
+    }
+
+    /**
+     * @inheritdoc
+     * @return static
+     */
+    public function withoutQueryParameters():UrlInterface
+    {
+        $url = clone $this;
+        $url->setQueryParameters(new Parameters());
+        return $url;
+    }
+
+    /**
+     * @inheritdoc
+     * @return string
+     */
+    public function getAuthority():string
+    {
+        $authority = '';
+        if ($this->userInfo) {
+            $authority = "$this->userInfo@";
+        }
+        if ($this->host) {
+            $authority .= $this->host;
+        }
+        if ($this->port) {
+            $authority .= ":$this->port";
+        }
+        return $authority;
+    }
+
+    /**
+     * @inheritdoc
+     * @param bool $withHost
+     * @param bool $withUserInfo
+     * @param bool $withPort
+     * @param bool $withQuery
+     * @param bool $withFragment
+     * @param string $queryParametersSeparator
+     * @return string
+     */
+    public function buildUrl(bool $withHost = true, bool $withUserInfo = true, bool $withPort = true,
+        bool $withQuery = true, bool $withFragment = true, string $queryParametersSeparator = '&'):string
+    {
+        $url = "";
+
+        if ($withHost && $this->host) {
+            $scheme = $this->scheme ?? 'http';
+            $url .= "$scheme://";
+
+            // user + pass
+            if ($withUserInfo && $this->userInfo) {
+                $url .= "$this->userInfo@";
+            }
+
+            // host
+            $url .= $this->host;
+
+            // port
+            if ($withPort && $this->port)
+            {
+                $url .= ":$this->port";
+            }
+
+        }
+
+        // path
+        $url .= $this->path ?: "/";
+
+        // query
+        if ($withQuery && $this->queryParameters) {
+            $url .= "?{$this->getQuery($queryParametersSeparator)}";
+        }
+
+        // fragment
+        if ($withFragment && $this->fragment) {
+            $url .= "#".urlencode($this->fragment);
+        }
+
+        return $url;
+    }
+
+    /**
+     * @inheritdoc
+     * @see UrlInterface::__toString()
+     */
+    public function __toString():string
+    {
+        try {
+            return $this->getUrl();
+        } catch (\Throwable $exception) {
+            return sprintf("Error [%s]: %s", get_class($exception), $exception->getMessage());
+        }
+    }
 }
