@@ -101,6 +101,20 @@ interface UrlInterface extends UriInterface
 	public function getUserInfo():?string;
 
     /**
+     * Returns the user name or NULL if not set.
+     *
+     * @return string|null
+     */
+    public function getUser():?string;
+
+    /**
+     * Returns the user password or NULL if not set.
+     *
+     * @return string|null
+     */
+    public function getPassword():?string;
+
+    /**
      * @inheritdoc
      * @return UrlInterface
      */

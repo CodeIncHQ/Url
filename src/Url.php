@@ -334,6 +334,30 @@ class Url implements UrlInterface
     }
 
     /**
+     * @inheritdoc
+     * @return string|null
+     */
+    public function getUser():?string
+    {
+        if ($this->userInfo) {
+            return explode(':', $this->userInfo)[0] ?? null;
+        }
+        return null;
+    }
+
+    /**
+     * @inheritdoc
+     * @return string|null
+     */
+    public function getPassword():?string
+    {
+        if ($this->userInfo) {
+            return explode(':', $this->userInfo)[1] ?? null;
+        }
+        return null;
+    }
+
+    /**
      * Sets the user and password.
      *
      * @param string|null $user
