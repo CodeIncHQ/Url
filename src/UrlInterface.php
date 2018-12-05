@@ -191,9 +191,10 @@ interface UrlInterface extends UriInterface
     /**
      * Returns the URL without a query string.
      *
+     * @param iterable|null $parameters Parameters to be removed
      * @return static
      */
-    public function withoutQuery():UrlInterface;
+    public function withoutQuery(?iterable $parameters = null):UrlInterface;
 
     /**
      * @inheritdoc

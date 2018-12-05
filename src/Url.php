@@ -545,12 +545,22 @@ class Url implements UrlInterface
 
     /**
      * @inheritdoc
+     * @param iterable|null $parameters Parameters to be removed
      * @return static
      */
-    public function withoutQuery():UrlInterface
+    public function withoutQuery(?iterable $parameters = null):UrlInterface
     {
         $url = clone $this;
-        $url->setQuery(null);
+        $query = [];
+        if ($parameters !== null) {
+            $query = $url->getQueryAsArray();
+            foreach ($parameters as $param) {
+                if (array_key_exists($param, $query)) {
+                    unset($query[$param]);
+                }
+            }
+        }
+        $url->setQuery($query);
         return $url;
     }
 
