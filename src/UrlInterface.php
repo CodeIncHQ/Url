@@ -157,53 +157,36 @@ interface UrlInterface extends UriInterface
 
     /**
      * @inheritdoc
-     * @param string $query
-     * @return Url
+     * @param string $paramsSeparator
+     * @return string
      */
-    public function withQuery($query):self;
+    public function getQuery(string $paramsSeparator = '&'):string;
+
+    /**
+     * Returns the query parameters in an array.
+     *
+     * @return array
+     */
+    public function getQueryAsArray():array;
 
     /**
      * @inheritdoc
-     * @param string $paramSeparator
-     * @return string
-     */
-    public function getQuery(string $paramSeparator = '&'):string;
-
-
-    /**
-     * Returns the query parameters object.
-     *
-     * @return ParametersInterface
-     */
-    public function getQueryParameters():ParametersInterface;
-
-    /**
-     * Sets the query parameters.
-     *
-     * @param ParametersInterface $parameters
+     * @param string|iterable|null $query
      * @return static
      */
-    public function withQueryParameters(ParametersInterface $parameters):UrlInterface;
+    public function withQuery($query):UrlInterface;
 
     /**
-     * Returns the URL without query parameters.
+     * Returns the URL without a query string.
      *
      * @return static
      */
-    public function withoutQueryParameters():UrlInterface;
+    public function withoutQuery():UrlInterface;
 
     /**
      * @inheritdoc
      */
     public function getAuthority():string;
-
-	/**
-	 * Returns the full URL (scheme + user + password + host + port + uri).
-	 *
-	 * @see Url::buildUrl()
-	 * @return string
-	 */
-	public function getUrl():string;
 
 	/**
 	 * Builds a custom URL.
@@ -217,12 +200,4 @@ interface UrlInterface extends UriInterface
 	 */
 	public function buildUrl(bool $withHost = true, bool $withUser = true, bool $withPort = true,
         bool $withQuery = true, bool $withFragment = true):string;
-
-	/**
-	 * Returns the URL. Alias of getUrl()
-	 *
-	 * @see Url::getUrl()
-	 * @return string
-	 */
-	public function __toString():string;
 }
