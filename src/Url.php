@@ -549,15 +549,6 @@ class Url implements UrlInterface
 
     /**
      * @inheritdoc
-     * @return string
-     */
-    public function getUrl():string
-    {
-        return $this->buildUrl();
-    }
-
-    /**
-     * @inheritdoc
      * @param bool $withHost
      * @param bool $withUserInfo
      * @param bool $withPort
@@ -613,6 +604,10 @@ class Url implements UrlInterface
      */
     public function __toString():string
     {
-        return $this->getUrl();
+        try {
+            return $this->getUrl();
+        } catch (\Throwable $exception) {
+            return sprintf("Error [%s]: %s", get_class($exception), $exception->getMessage());
+        }
     }
 }
