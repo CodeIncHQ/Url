@@ -21,6 +21,7 @@
 //
 declare(strict_types = 1);
 namespace CodeInc\Url;
+use Psr\Http\Message\UriInterface;
 
 
 /**
@@ -29,7 +30,7 @@ namespace CodeInc\Url;
  * @package CodeInc\Url
  * @author Joan Fabrégat <joan@codeinc.fr>
  */
-interface UrlInterface extends \ArrayAccess, \Traversable
+interface UrlInterface extends UriInterface
 {
 	/**
 	 * Returns the URL scheme.
@@ -38,12 +39,39 @@ interface UrlInterface extends \ArrayAccess, \Traversable
 	 */
 	public function getScheme():?string;
 
+    /**
+     * Returns the URL without a scheme.
+     *
+     * @return UrlInterface
+     */
+    public function withoutScheme():self;
+
+    /**
+     * @inheritdoc
+     * @param string $scheme
+     * @return UrlInterface
+     */
+    public function withScheme($scheme):self;
+
 	/**
 	 * Returns the host name or IP address or null if not set.
 	 *
 	 * @return null|string
 	 */
 	public function getHost():?string;
+
+    /**
+     * @inheritdoc
+     * @return UrlInterface
+     */
+    public function withHost($host):self;
+
+    /**
+     * Returns the URL without the host.
+     *
+     * @return static
+     */
+    public function withoutHost():self;
 
 	/**
 	 * Returns the host port number.
@@ -52,19 +80,38 @@ interface UrlInterface extends \ArrayAccess, \Traversable
 	 */
 	public function getPort():?int;
 
+    /**
+     * @inheritdoc
+     * @return UrlInterface
+     */
+    public function withPort($port):self;
+
+    /**
+     * Returns the URL without a port.
+     *
+     * @return UrlInterface
+     */
+    public function withoutPort():self;
+
 	/**
 	 * Returns the user name or null if not set.
 	 *
 	 * @return null|string
 	 */
-	public function getUser():?string;
+	public function getUserInfo():?string;
 
-	/**
-	 * Returns the user password or null if not set.
-	 *
-	 * @return null|string
-	 */
-	public function getPassword():?string;
+    /**
+     * @inheritdoc
+     * @return UrlInterface
+     */
+    public function withUserInfo($user, $password = null):self;
+
+    /**
+     * Returns the URL without user and password.
+     *
+     * @return UrlInterface
+     */
+    public function withoutUserInfo():self;
 
 	/**
 	 * Returns the path or null if not set.
@@ -73,36 +120,82 @@ interface UrlInterface extends \ArrayAccess, \Traversable
 	 */
 	public function getPath():?string;
 
-	/**
+
+    /**
+     * @inheritdoc
+     * @return UrlInterface
+     */
+    public function withPath($path):self;
+
+    /**
+     * Returns the URL without a path.
+     *
+     * @return UrlInterface
+     */
+    public function withoutPath():self;
+
+    /**
 	 * Returns the URL fragment or null if not set.
 	 *
 	 * @return null|string
 	 */
 	public function getFragment():?string;
 
-	/**
-	 * Returns the query parameters as a string or null if the query is empty.
-	 *
-	 * @see Url::DEFAULT_QUERY_PARAM_SEPARATOR
-	 * @param string|null $paramSeparator (default: '&')
-	 * @return string|null
-	 */
-	public function getQueryString(string $paramSeparator = null):?string;
+    /**
+     * @inheritdoc
+     * @param string $fragment
+     * @return static
+     */
+    public function withFragment($fragment):self;
 
-	/**
-	 * Returns the query parameters in an array.
-	 *
-	 * @return array
-	 */
-	public function getQuery():array;
+    /**
+     * Returns the URL without a fragment.
+     *
+     * @return static
+     */
+    public function withoutFragment():self;
 
-	/**
-	 * Returns the value of a query parameter or null if not set.
-	 *
-	 * @param string $paramName
-	 * @return string|null
-	 */
-	public function getQueryParameter(string $paramName):?string;
+    /**
+     * @inheritdoc
+     * @param string $query
+     * @return Url
+     */
+    public function withQuery($query):self;
+
+    /**
+     * @inheritdoc
+     * @param string $paramSeparator
+     * @return string
+     */
+    public function getQuery(string $paramSeparator = '&'):string;
+
+
+    /**
+     * Returns the query parameters object.
+     *
+     * @return ParametersInterface
+     */
+    public function getQueryParameters():ParametersInterface;
+
+    /**
+     * Sets the query parameters.
+     *
+     * @param ParametersInterface $parameters
+     * @return static
+     */
+    public function withQueryParameters(ParametersInterface $parameters):UrlInterface;
+
+    /**
+     * Returns the URL without query parameters.
+     *
+     * @return static
+     */
+    public function withoutQueryParameters():UrlInterface;
+
+    /**
+     * @inheritdoc
+     */
+    public function getAuthority():string;
 
 	/**
 	 * Returns the full URL (scheme + user + password + host + port + uri).
@@ -115,15 +208,15 @@ interface UrlInterface extends \ArrayAccess, \Traversable
 	/**
 	 * Builds a custom URL.
 	 *
-	 * @param bool $includeHost Includes the hostname (default: true)
-	 * @param bool $includeUser Includes the user and password (defaut: true)
-	 * @param bool $includePort Includes the port number (default: true)
-	 * @param bool $includeQuery Incldues the query string (default: true)
-	 * @param bool $includeFragment Includes the fragment (default: true)
+	 * @param bool $withHost Includes the hostname (default: true)
+	 * @param bool $withUser Includes the user and password (defaut: true)
+	 * @param bool $withPort Includes the port number (default: true)
+	 * @param bool $withQuery Incldues the query string (default: true)
+	 * @param bool $withFragment Includes the fragment (default: true)
 	 * @return string
 	 */
-	public function buildUrl(bool $includeHost = true, bool $includeUser = true, bool $includePort = true,
-        bool $includeQuery = true, bool $includeFragment = true):string;
+	public function buildUrl(bool $withHost = true, bool $withUser = true, bool $withPort = true,
+        bool $withQuery = true, bool $withFragment = true):string;
 
 	/**
 	 * Returns the URL. Alias of getUrl()

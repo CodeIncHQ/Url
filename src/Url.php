@@ -31,20 +31,8 @@ use Psr\Http\Message\UriInterface;
  * @package CodeInc\Url
  * @author Joan Fabrégat <joan@codeinc.fr>
  */
-class Url implements UrlInterface, \IteratorAggregate
+class Url implements UrlInterface
 {
-    public const DEFAULT_SCHEME = "http";
-    public const DEFAULT_REDIRECT_STATUS_CODE = 302;
-    public const DEFAULT_QUERY_PARAM_SEPARATOR = '&';
-
-    private const PORTS_NUMBERS = [
-        "ftp" => 21,
-        "ssh" => 22,
-        "sftp" => 22,
-        "http" => 80,
-        "https" => 443
-    ];
-
     /**
      * URL scheme.
      *
@@ -70,18 +58,11 @@ class Url implements UrlInterface, \IteratorAggregate
     protected $port;
 
     /**
-     * URL user.
+     * URL user and password separated by ':'.
      *
      * @var string|null
      */
-    protected $user;
-
-    /**
-     * URL password.
-     *
-     * @var string|null
-     */
-    protected $password;
+    protected $userInfo;
 
     /**
      * URL path.
@@ -91,11 +72,11 @@ class Url implements UrlInterface, \IteratorAggregate
     protected $path;
 
     /**
-     * URL query (assoc array)
+     * URL query parameters.
      *
-     * @var array
+     * @var Parameters
      */
-    protected $query = [];
+    protected $queryParameters;
 
     /**
      * URL fragment
@@ -105,47 +86,43 @@ class Url implements UrlInterface, \IteratorAggregate
     protected $fragment;
 
     /**
+     * Url constructor.
+     */
+    public function __construct()
+    {
+        $this->setQueryParameters(new Parameters());
+    }
+
+    /**
      * Sets the URL.
      *
      * @param string $string
-     * @param bool $scheme
-     * @param bool $host
-     * @param bool $port
-     * @param bool $path
-     * @param bool $fragment
-     * @param bool $user
-     * @param bool $password
-     * @param bool $query
-     * @return Url
+     * @return static
      */
-    public static function fromString(string $string, bool $scheme = true, bool $host = true, bool $port = true,
-        bool $path = true, bool $fragment = true, bool $user = true, bool $password = true, bool $query = true):self
+    public static function fromString(string $string):self
     {
-        $url = new self;
+        $url = new static;
         if ($parsedUrl = parse_url($string)) {
-            if ($scheme && isset($parsedUrl['scheme']) && $parsedUrl['scheme']) {
-                $url->scheme = strtolower($parsedUrl['scheme']);
+            if (isset($parsedUrl['scheme'])) {
+                $url->setScheme($parsedUrl['scheme']);
             }
-            if ($host && isset($parsedUrl['host']) && $parsedUrl['host']) {
-                $url->host = $parsedUrl['host'];
+            if (isset($parsedUrl['host'])) {
+                $url->setHost($parsedUrl['host']);
             }
-            if ($port && isset($parsedUrl['port']) && $parsedUrl['port']) {
-                $url->port = (int)$parsedUrl['port'];
+            if (isset($parsedUrl['port'])) {
+                $url->setPort($parsedUrl['port']);
             }
-            if ($user && isset($parsedUrl['user']) && $parsedUrl['user']) {
-                $url->user = $parsedUrl['user'];
+            if (isset($parsedUrl['user'])) {
+                $url->setUserInfo($parsedUrl['user'], $parsedUrl['pass'] ?? null);
             }
-            if ($password && isset($parsedUrl['pass']) && $parsedUrl['pass']) {
-                $url->password = $parsedUrl['pass'];
+            if (isset($parsedUrl['path'])) {
+                $url->setPath($parsedUrl['path']);
             }
-            if ($path && isset($parsedUrl['path']) && $parsedUrl['path']) {
-                $url->path = $parsedUrl['path'];
+            if (isset($parsedUrl['fragment'])) {
+                $url->setFragment($parsedUrl['fragment']);
             }
-            if ($fragment && isset($parsedUrl['fragment']) && $parsedUrl['fragment']) {
-                $url->fragment = $parsedUrl['fragment'];
-            }
-            if ($query && isset($parsedUrl['query']) && $parsedUrl['query']) {
-                parse_str($parsedUrl['query'], $url->query);
+            if (isset($parsedUrl['query']) && $parsedUrl['query']) {
+                $url->setQueryParameters(Parameters::fromQueryString($parsedUrl['query']));
             }
         }
         return $url;
@@ -153,22 +130,15 @@ class Url implements UrlInterface, \IteratorAggregate
 
     /**
      * @param bool $scheme
-     * @param bool $host
-     * @param bool $port
-     * @param bool $path
-     * @param bool $user
-     * @param bool $password
-     * @param bool $query
-     * @return Url
+     * @return static
      */
-    public static function fromGlobals(bool $scheme = true, bool $host = true, bool $port = true,
-        bool $path = true, bool $user = true, bool $password = true, bool $query = true)
+    public static function fromGlobals(bool $scheme = true)
     {
-        $url = new self;
+        $url = new static();
         if ($scheme) {
             $url->setScheme(@$_SERVER["HTTPS"] == "on" ? "https" : "http");
         }
-        if ($host && isset($_SERVER["HTTP_HOST"])) {
+        if (isset($_SERVER["HTTP_HOST"])) {
             if (($pos = strpos($_SERVER["HTTP_HOST"], ":")) !== false) {
                 $url->setHost(substr($_SERVER["HTTP_HOST"], 0, $pos));
             }
@@ -176,10 +146,10 @@ class Url implements UrlInterface, \IteratorAggregate
                 $url->setHost($_SERVER["HTTP_HOST"]);
             }
         }
-        if ($port && isset($_SERVER["HTTP_HOST"]) && ($pos = strpos($_SERVER["HTTP_HOST"], ":")) !== false) {
-            $url->setPort((int)substr($_SERVER["HTTP_HOST"], $pos + 1));
+        if (isset($_SERVER["HTTP_HOST"]) && ($pos = strpos($_SERVER["HTTP_HOST"], ":")) !== false) {
+            $url->setPort(substr($_SERVER["HTTP_HOST"], $pos + 1));
         }
-        if ($path && isset($_SERVER["REQUEST_URI"])) {
+        if (isset($_SERVER["REQUEST_URI"])) {
             if (($pos = strpos($_SERVER["REQUEST_URI"], "?")) !== false) {
                 $url->setPath(substr($_SERVER["REQUEST_URI"], 0, $pos));
             }
@@ -187,89 +157,58 @@ class Url implements UrlInterface, \IteratorAggregate
                 $url->setPath($_SERVER["REQUEST_URI"]);
             }
         }
-        if ($user && isset($_SERVER["PHP_AUTH_USER"])) {
-            $url->setUser($_SERVER["PHP_AUTH_USER"]);
+        if (isset($_SERVER["PHP_AUTH_USER"])) {
+            $url->setUserInfo($_SERVER["PHP_AUTH_USER"], $_SERVER["PHP_AUTH_PW"] ?? null);
         }
-        if ($password && isset($_SERVER["PHP_AUTH_PW"])) {
-            $url->setPassword($_SERVER["PHP_AUTH_PW"]);
-        }
-        if ($query && isset($_SERVER["REQUEST_URI"]) && ($pos = strpos($_SERVER["REQUEST_URI"], "?")) !== false) {
-            $url->setQueryString(substr($_SERVER["REQUEST_URI"], $pos + 1));
+        if (isset($_SERVER["REQUEST_URI"]) && ($pos = strpos($_SERVER["REQUEST_URI"], "?")) !== false) {
+            $url->setQueryParameters(Parameters::fromQueryString(substr($_SERVER["REQUEST_URI"], $pos + 1)));
         }
         return $url;
     }
 
     /**
-     * @param UriInterface $psr7Uri
-     * @param bool $scheme
-     * @param bool $host
-     * @param bool $port
-     * @param bool $path
-     * @param bool $user
-     * @param bool $password
-     * @param bool $query
-     * @return Url
+     * @param UriInterface $uri
+     * @return static
      */
-    public static function fromPsr7Uri(UriInterface $psr7Uri, bool $scheme = true, bool $host = true, bool $port = true,
-        bool $path = true, bool $user = true, bool $password = true, bool $query = true):self
+    public static function fromPsr7Uri(UriInterface $uri):self
     {
-        $url = new self;
-        if ($scheme) $url->setScheme($psr7Uri->getScheme());
-        if ($host) $url->setHost($psr7Uri->getHost());
-        if ($port) $url->setPort($psr7Uri->getPort());
-        if ($path) $url->setPath($psr7Uri->getPath());
-        if (($user || $password) && $userInfo = $psr7Uri->getUserInfo()) {
-            $userInfo = explode(":", $userInfo);
-            if ($user) {
-                $url->setUser($userInfo[0] ?? null);
-            }
-            if ($password) {
-                $url->setPassword($userInfo[1] ?? null);
-            }
+        $url = new static();
+        if ($scheme = $uri->getScheme()) {
+            $url->setScheme($scheme);
         }
-        if ($query) {
-            $url->setQueryString($psr7Uri->getQuery());
+        if ($host = $uri->getHost()) {
+            $url->setHost($host);
+        }
+        if ($port = $uri->getPort()) {
+            $url->setPort($port);
+        }
+        if ($path = $uri->getPath()) {
+            $url->setPath($path);
+        }
+        if ($userInfo = $uri->getUserInfo()) {
+            $url->setUserInfo($userInfo);
+        }
+        if ($query = $uri->getQuery()) {
+            $url->setQueryParameters(Parameters::fromQueryString($uri->getQuery()));
         }
         return $url;
     }
 
     /**
-     * @param ServerRequestInterface $psr7Request
-     * @param bool $scheme
-     * @param bool $host
-     * @param bool $port
-     * @param bool $path
-     * @param bool $user
-     * @param bool $password
-     * @param bool $query
-     * @return Url
+     * @param ServerRequestInterface $request
+     * @return static
      */
-    public static function fromPsr7Request(ServerRequestInterface $psr7Request, bool $scheme = true, bool $host = true,
-        bool $port = true, bool $path = true, bool $user = true, bool $password = true, bool $query = true):self
+    public static function fromPsr7Request(ServerRequestInterface $request):self
     {
-        $url = self::fromPsr7Uri($psr7Request->getUri(), $scheme, $host, $port, $path, $user, $password, $query);
-        $url->setQueryParameters($psr7Request->getQueryParams());
+        $url = static::fromPsr7Uri($request->getUri());
+        $url->setQueryParameters(Parameters::fromIterable($request->getQueryParams()));
         return $url;
     }
 
-
-    /**
-     * Sets the URL scheme.
-     *
-     * @see Url::SCHEME_HTTPS
-     * @see Url::SCHEME_HTTP
-     * @param string|null $scheme
-     * @return Url
-     */
-    public function setScheme(?string $scheme):self
-    {
-        $this->scheme = $scheme;
-        return $this;
-    }
 
     /**
      * @inheritdoc
-     * @see UrlInterface::getScheme()
+     * @return string|null
      */
     public function getScheme():?string
     {
@@ -277,20 +216,41 @@ class Url implements UrlInterface, \IteratorAggregate
     }
 
     /**
-     * Sets the host name or IP address.
+     * Sets the URL scheme ('http', 'https', etc.).
      *
-     * @param string|null $host
-     * @return Url
+     * @param string|null $scheme
      */
-    public function setHost(?string $host):self
+    protected function setScheme($scheme):void
     {
-        $this->host = $host;
-        return $this;
+        $this->scheme = $scheme ? strtolower((string)$scheme) : null;
     }
 
     /**
      * @inheritdoc
-     * @see UrlInterface::getHost()
+     * @param string $scheme
+     * @return static
+     */
+    public function withScheme($scheme):UrlInterface
+    {
+        $url = clone $this;
+        $url->setScheme($scheme);
+        return $url;
+    }
+
+    /**
+     * @inheritdoc
+     * @return static
+     */
+    public function withoutScheme():UrlInterface
+    {
+        $url = clone $this;
+        $url->setScheme(null);
+        return $url;
+    }
+
+    /**
+     * @inheritdoc
+     * @return string|null
      */
     public function getHost():?string
     {
@@ -298,20 +258,41 @@ class Url implements UrlInterface, \IteratorAggregate
     }
 
     /**
-     * Sets the host port number.
+     * Sets the host name or IP address.
      *
-     * @param int|null $port
-     * @return Url
+     * @param string|null $host
      */
-    public function setPort(?int $port):self
+    protected function setHost($host):void
     {
-        $this->port = $port;
-        return $this;
+        $this->host = $host ? (string)$host : null;
     }
 
     /**
      * @inheritdoc
-     * @see UrlInterface::getPort()
+     * @param string|null $host
+     * @return static
+     */
+    public function withHost($host):UrlInterface
+    {
+        $url = clone $this;
+        $url->setHost($host);
+        return $url;
+    }
+
+    /**
+     * @inheritdoc
+     * @return static
+     */
+    public function withoutHost():UrlInterface
+    {
+        $url = clone $this;
+        $url->setHost(null);
+        return $url;
+    }
+
+    /**
+     * @inheritdoc
+     * @return int|null
      */
     public function getPort():?int
     {
@@ -319,62 +300,89 @@ class Url implements UrlInterface, \IteratorAggregate
     }
 
     /**
-     * Sets the user name.
+     * Sets the host port number.
+     *
+     * @param int|null $port
+     */
+    protected function setPort($port):void
+    {
+        $this->port = $port ? (int)$port : null;
+    }
+
+    /**
+     * @inheritdoc
+     * @param int|null $port
+     * @return static
+     */
+    public function withPort($port):UrlInterface
+    {
+        $url = clone $this;
+        $url->setPort($port);
+        return $url;
+    }
+
+    /**
+     * @inheritdoc
+     * @return static
+     */
+    public function withoutPort():UrlInterface
+    {
+        $url = clone $this;
+        $url->setPort(null);
+        return $url;
+    }
+
+    /**
+     * @inheritdoc
+     * @return string|null
+     */
+    public function getUserInfo():?string
+    {
+        return $this->userInfo;
+    }
+
+    /**
+     * Sets the user and password.
      *
      * @param string|null $user
-     * @return Url
-     */
-    public function setUser(?string $user):self
-    {
-        $this->user = $user;
-        return $this;
-    }
-
-    /**
-     * @inheritdoc
-     * @see UrlInterface::getUser()
-     */
-    public function getUser():?string
-    {
-        return $this->user;
-    }
-
-    /**
-     * Sets the user password.
-     *
      * @param string|null $password
-     * @return Url
      */
-    public function setPassword(?string $password):self
+    protected function setUserInfo($user, $password = null):void
     {
-        $this->password = $password;
-        return $this;
+        if ($user) {
+            $this->userInfo = (string)$user;
+            if ($password) {
+                $this->userInfo .= ':'.(string)$password;
+            }
+        }
     }
 
     /**
      * @inheritdoc
-     * @see UrlInterface::getPassword()
+     * @param string|null $user
+     * @param string|null $password
+     * @return static
      */
-    public function getPassword():?string
+    public function withUserInfo($user, $password = null):UrlInterface
     {
-        return $this->password;
-    }
-
-    /**
-     * Sets the path.
-     *
-     * @param string|null $path
-     * @return Url
-     */
-    public function setPath(?string $path):self
-    {
-        $this->path = $path;
-        return $this;
+        $url = clone $this;
+        $url->setUserInfo($user, $password);
+        return $url;
     }
 
     /**
      * @inheritdoc
-     * @see UrlInterface::getPath()
+     * @return static
+     */
+    public function withoutUserInfo():UrlInterface
+    {
+        $url = clone $this;
+        $url->setUserInfo(null);
+        return $url;
+    }
+
+    /**
+     * @return string|null
      */
     public function getPath():?string
     {
@@ -382,20 +390,41 @@ class Url implements UrlInterface, \IteratorAggregate
     }
 
     /**
-     * Sets the URL fragment.
+     * Sets the path.
      *
-     * @param string|null $fragment
-     * @return Url
+     * @param string|null $path
      */
-    public function setFragment(?string $fragment):self
+    protected function setPath($path):void
     {
-        $this->fragment = $fragment;
-        return $this;
+        $this->path = $path ? (string)$path : null;
     }
 
     /**
      * @inheritdoc
-     * @see UrlInterface::getFragment()
+     * @param string|null $path
+     * @return static
+     */
+    public function withPath($path):UrlInterface
+    {
+        $url = clone $this;
+        $url->setPath($path);
+        return $url;
+    }
+
+    /**
+     * @inheritdoc
+     * @return static
+     */
+    public function withoutPath():UrlInterface
+    {
+        $url = clone $this;
+        $url->setPath(null);
+        return $url;
+    }
+
+    /**
+     * @inheritdoc
+     * @return string|null
      */
     public function getFragment():?string
     {
@@ -403,111 +432,124 @@ class Url implements UrlInterface, \IteratorAggregate
     }
 
     /**
-     * Sets the query parameters from a string (parsed using parse_str()).
+     * Sets the URL fragment.
      *
-     * @uses parse_str()
-     * @param string $queryString
-     * @return Url
+     * @param string|null $fragment
      */
-	public function setQueryString(string $queryString):self
-	{
-		parse_str($queryString, $this->query);
-		return $this;
-	}
-
-    /**
-     * Replaces all the parameters with new ones.
-     *
-     * @param array $parameters
-     * @return Url
-     */
-	public function setQueryParameters(array $parameters):self
-	{
-		$this->query = [];
-		$this->addQueryParameters($parameters);
-		return $this;
-	}
-
-    /**
-     * Add extra query parameters. Previously defined parameters are kept expect for duplicates which are replaced
-     * with the new parameters values.
-     *
-     * @param array $parameters
-     * @return Url
-     */
-	public function addQueryParameters(array $parameters):self
-	{
-		foreach ($parameters as $paramName => $value) {
-			$this->setQueryParameter((string)$paramName, $value !== null ? (string)$value : null);
-		}
-		return $this;
-	}
-
-    /**
-     * Sets a query parameter.
-     *
-     * @param string $paramName
-     * @param string|null $value
-     * @return Url
-     */
-	public function setQueryParameter(string $paramName, string $value = null):self
-	{
-		$this->query[$paramName] = $value;
-		return $this;
-	}
-
-    /**
-     * Removes a query parameter.
-     *
-     * @param string $paramName
-     * @return Url
-     */
-    public function removeQueryParameter(string $paramName):self
+    protected function setFragment(?string $fragment):void
     {
-        unset($this->query[$paramName]);
-        return $this;
+        $this->fragment = $fragment;
     }
 
     /**
      * @inheritdoc
-     * @see UrlInterface::getQueryParameter()
+     * @param string $fragment
+     * @return static
      */
-    public function getQueryParameter(string $paramName):?string
+    public function withFragment($fragment):UrlInterface
     {
-        return $this->query[$paramName] ?? null;
+        $url = clone $this;
+        $url->setFragment($fragment);
+        return $url;
     }
 
     /**
      * @inheritdoc
-     * @see UrlInterface::getQuery()
+     * @return static
      */
-    public function getQuery():array
+    public function withoutFragment():UrlInterface
     {
-        return $this->query;
+        $url = clone $this;
+        $url->setFragment(null);
+        return $url;
     }
 
     /**
      * @inheritdoc
-     * @see UrlInterface::getQueryString()
+     * @param string $query
+     * @return static
      */
-    public function getQueryString(string $paramSeparator = null):?string
+    public function withQuery($query):UrlInterface
     {
-        $queryString = "";
-        foreach ($this->query as $parameter => $value) {
-            if (!empty($queryString)) {
-                $queryString .= $paramSeparator ?: self::DEFAULT_QUERY_PARAM_SEPARATOR;
-            }
-            $queryString .= urlencode($parameter);
-            if ($value) {
-                $queryString .= "=".urlencode($value);
-            }
+        $url = clone $this;
+        $url->setQueryParameters(Parameters::fromQueryString((string)$query));
+        return $url;
+    }
+
+    /**
+     * @inheritdoc
+     * @param string $paramSeparator
+     * @return string
+     */
+    public function getQuery(string $paramSeparator = '&'):string
+    {
+        return $this->getQueryParameters()->getParamsAsString();
+    }
+
+    /**
+     * @inheritdoc
+     * @return ParametersInterface
+     */
+    public function getQueryParameters():ParametersInterface
+    {
+        return $this->queryParameters;
+    }
+
+    /**
+     * Sets the query parameters object.
+     *
+     * @param ParametersInterface $parameters
+     */
+    protected function setQueryParameters(ParametersInterface $parameters):void
+    {
+        $this->queryParameters = $parameters;
+    }
+
+    /**
+     * @inheritdoc
+     * @param ParametersInterface $parameters
+     * @return static
+     */
+    public function withQueryParameters(ParametersInterface $parameters):UrlInterface
+    {
+        $url = clone $this;
+        $url->setQueryParameters($parameters);
+        return $url;
+    }
+
+    /**
+     * @inheritdoc
+     * @return static
+     */
+    public function withoutQueryParameters():UrlInterface
+    {
+        $url = clone $this;
+        $url->setQueryParameters(new Parameters());
+        return $url;
+    }
+
+    /**
+     * @inheritdoc
+     * @return string
+     */
+    public function getAuthority():string
+    {
+        $authority = '';
+        if ($this->userInfo) {
+            $authority = "$this->userInfo@";
         }
-        return $queryString ?: null;
+        if ($this->host) {
+            $authority .= $this->host;
+        }
+        if ($this->port) {
+            $authority .= ":$this->port";
+        }
+        return $authority;
     }
 
     /**
      * @inheritdoc
-     * @see UrlInterface::getUser()
+     * @return string
      */
     public function getUrl():string
     {
@@ -516,37 +558,33 @@ class Url implements UrlInterface, \IteratorAggregate
 
     /**
      * @inheritdoc
-     * @param bool $includeHost
-     * @param bool $includeUser
-     * @param bool $includePort
-     * @param bool $includeQuery
-     * @param bool $includeFragment
+     * @param bool $withHost
+     * @param bool $withUserInfo
+     * @param bool $withPort
+     * @param bool $withQuery
+     * @param bool $withFragment
+     * @param string $queryParametersSeparator
      * @return string
      */
-    public function buildUrl(bool $includeHost = true, bool $includeUser = true, bool $includePort = true,
-        bool $includeQuery = true, bool $includeFragment = true):string
+    public function buildUrl(bool $withHost = true, bool $withUserInfo = true, bool $withPort = true,
+        bool $withQuery = true, bool $withFragment = true, string $queryParametersSeparator = '&'):string
     {
         $url = "";
 
-        if ($includeHost && $this->host) {
-            $scheme = $this->scheme ?? self::DEFAULT_SCHEME;
+        if ($withHost && $this->host) {
+            $scheme = $this->scheme ?? 'http';
             $url .= "$scheme://";
 
             // user + pass
-            if ($includeUser && $this->user) {
-                $url .= urlencode($this->user);
-                if ($this->password) {
-                    $url .= ":".urlencode($this->password);
-                }
-                $url .= "@";
+            if ($withUserInfo && $this->userInfo) {
+                $url .= "$this->userInfo@";
             }
 
             // host
             $url .= $this->host;
 
             // port
-            if ($includePort && $this->port
-                && (!isset(self::PORTS_NUMBERS[$scheme]) || $this->port != self::PORTS_NUMBERS[$scheme]))
+            if ($withPort && $this->port)
             {
                 $url .= ":$this->port";
             }
@@ -557,12 +595,12 @@ class Url implements UrlInterface, \IteratorAggregate
         $url .= $this->path ?: "/";
 
         // query
-        if ($includeQuery && $this->query) {
-            $url .= "?{$this->getQueryString()}";
+        if ($withQuery && $this->queryParameters) {
+            $url .= "?{$this->getQuery($queryParametersSeparator)}";
         }
 
         // fragment
-        if ($includeFragment && $this->fragment) {
+        if ($withFragment && $this->fragment) {
             $url .= "#".urlencode($this->fragment);
         }
 
@@ -576,53 +614,5 @@ class Url implements UrlInterface, \IteratorAggregate
     public function __toString():string
     {
         return $this->getUrl();
-    }
-
-    /**
-     * @inheritdoc
-     * @return \ArrayIterator
-     */
-    public function getIterator():\ArrayIterator
-    {
-        return new \ArrayIterator($this->query);
-    }
-
-    /**
-     * @inheritdoc
-     * @param string $offset
-     * @return bool
-     */
-    public function offsetExists($offset):bool
-    {
-        return $this->getQueryParameter((string)$offset) !== null;
-    }
-
-    /**
-     * @inheritdoc
-     * @param string $offset
-     * @return string|null
-     */
-    public function offsetGet($offset):?string
-    {
-        return $this->getQueryParameter((string)$offset);
-    }
-
-    /**
-     * @inheritdoc
-     * @param string $offset
-     * @param string|null $value
-     */
-    public function offsetSet($offset, $value):void
-    {
-        $this->setQueryParameter((string)$offset, $value !== null ? (string)$value : null);
-    }
-
-    /**
-     * @inheritdoc
-     * @param string $offset
-     */
-    public function offsetUnset($offset):void
-    {
-        $this->removeQueryParameter((string)$offset);
     }
 }
