@@ -502,7 +502,7 @@ class Url implements UrlInterface
 
     /**
      * @inheritdoc
-     * @return array
+     * @return string[]
      */
     public function getQueryAsArray():array
     {

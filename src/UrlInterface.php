@@ -133,7 +133,6 @@ interface UrlInterface extends UriInterface
 	 */
 	public function getPath():?string;
 
-
     /**
      * @inheritdoc
      * @return UrlInterface
